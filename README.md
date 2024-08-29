@@ -10,9 +10,9 @@ Preparing the next version of OpenAgents.
 
 ## Previous versions
 
-- [v1](https://github.com/OpenAgentsInc/openagents) - Live at https://chat.openagents.com
-- v2 - Live at https://openagents.com
+- v1 - [Website](https://chat.openagents.com) | [GitHub](https://github.com/OpenAgentsInc/openagents)
+- v2 - [Website](https://openagents.com)
 
 ## License
 
-v3 is in the public domain under [CC0](https://github.com/OpenAgentsInc/v3?tab=CC0-1.0-1-ov-file#readme).
+Public domain under [CC0](https://github.com/OpenAgentsInc/v3?tab=CC0-1.0-1-ov-file#readme)
