@@ -2,6 +2,15 @@
 
 Preparing the next version of OpenAgents.
 
+## Principles
+
+- Maximize decentralization
+- Minimize platform risk
+- Minimize third-party dependencies
+- Prioritize Bitcoin payments
+- Prioritize Nostr authentication
+- Require no personally identifying information
+
 ## Technologies
 
 - Bitcoin via Lightning
