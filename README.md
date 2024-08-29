@@ -10,6 +10,7 @@ Preparing the next version of OpenAgents.
 - Prioritize Bitcoin payments
 - Prioritize Nostr authentication
 - Require no personally identifying information
+- Cross-platform (web & mobile)
 
 ## Technologies
 
