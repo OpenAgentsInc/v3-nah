@@ -9,4 +9,4 @@ Preparing the next version of OpenAgents.
 
 ## License
 
-v3 is in the public domain under Creative Commons 0.
+v3 is in the public domain under [CC0](https://github.com/OpenAgentsInc/v3?tab=CC0-1.0-1-ov-file#readme).
