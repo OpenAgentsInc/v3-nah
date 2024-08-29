@@ -20,8 +20,8 @@ Preparing the next version of OpenAgents.
 
 ## Previous versions
 
-- v1 - [Website](https://chat.openagents.com) | [GitHub](https://github.com/OpenAgentsInc/openagents)
-- v2 - [Website](https://openagents.com)
+- v1 - [Website](https://chat.openagents.com) | [GitHub](https://github.com/OpenAgentsInc/openagents) - Chat with top models & agent store MVP
+- v2 - [Website](https://openagents.com) | [GitHub](https://github.com/openAgentsInc/v2) - AutoDev MVP
 
 ## License
 
