@@ -7,6 +7,7 @@ Preparing the next version of OpenAgents.
 - Bitcoin via Lightning
 - Nostr
 - React & React Native
+- Golang
 
 ## Previous versions
 
@@ -15,4 +16,4 @@ Preparing the next version of OpenAgents.
 
 ## License
 
-Public domain under [CC0](https://github.com/OpenAgentsInc/v3?tab=CC0-1.0-1-ov-file#readme)
+Public domain under [CC0](https://github.com/OpenAgentsInc/v3?tab=CC0-1.0-1-ov-file#readme).
