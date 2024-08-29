@@ -2,6 +2,12 @@
 
 Preparing the next version of OpenAgents.
 
+## Technologies
+
+- Bitcoin via Lightning
+- Nostr
+- React & React Native
+
 ## Previous versions
 
 - [v1](https://github.com/OpenAgentsInc/openagents) - Live at https://chat.openagents.com
