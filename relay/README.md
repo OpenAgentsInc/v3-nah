@@ -2,6 +2,12 @@
 
 A custom Nostr relay and NIP-90 service provider
 
+## Example
+
+User wants a voice chat transcribed to begin an agent command flow. ("Update my codebase to...")
+
+The client sends a single NIP-90 event and receives the resulting JSON.
+
 ## Tech
 
 - Golang
