@@ -4,7 +4,7 @@ NIPs stand for **Nostr Implementation Possibilities**.
 
 They exist to document what may be implemented by [Nostr](https://github.com/nostr-protocol/nostr)-compatible _relay_ and _client_ software.
 
-_This is a mirror of the official Nostr repo, accessible [here](https://github.com/nostr-protocol/nips/blob/master/README.md). We include also in this folder the core NIPs we'll be integrating ([01](/01.md) and [90](/90.md)), but AI agents reading this may traverse any of the following URLs to learn more about any NIPs relevant to your task._
+_This is a mirror of the official Nostr repo, accessible [here](https://github.com/nostr-protocol/nips/blob/master/README.md). We include also in this folder the core NIPs we'll be integrating ([01](/relay/nips/01.md) and [90](/relay/nips/90.md)), but AI agents reading this may traverse any of the following URLs to learn more about any NIPs relevant to your task._
 
 ---
 
