@@ -44,16 +44,20 @@ export const useStore = create<State>()(
         let sk, pk;
 
         if (userSecret) {
+          console.log("Using existing keys...");
           // Use existing keys
           sk = userSecret;
           pk = getPublicKey(sk);
           setUserPubkey(pk);
         } else {
+          console.log("Generating new keys...");
           // Generate new keys
           sk = generatePrivateKey(); // `sk` is a hex string
+          console.log(sk)
           pk = getPublicKey(sk); // `pk` is a hex string
           setUserPubkey(pk);
           setUserSecret(sk);
+          console.log("Generated keys:", { sk, pk });
         }
 
         const ndk = new NDK({

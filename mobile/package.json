@@ -6,13 +6,17 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "npx patch-package"
   },
   "dependencies": {
     "@nostr-dev-kit/ndk": "^2.10.0",
     "expo": "~51.0.28",
+    "expo-crypto": "^13.0.2",
     "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
+    "nostr-tools": "^2.7.0",
+    "nostr-tools_1_1_1": "npm:nostr-tools@^1.1.1",
     "react": "18.2.0",
     "react-native": "0.74.5",
     "text-encoding-polyfill": "^0.6.7",

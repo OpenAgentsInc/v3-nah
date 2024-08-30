@@ -1,0 +1,22 @@
+diff --git a/node_modules/@noble/hashes/utils.js b/node_modules/@noble/hashes/utils.js
+index ffd37be..e3574a4 100644
+--- a/node_modules/@noble/hashes/utils.js
++++ b/node_modules/@noble/hashes/utils.js
+@@ -165,11 +165,14 @@ exports.wrapXOFConstructorWithOpts = wrapXOFConstructorWithOpts;
+ /**
+  * Secure PRNG. Uses `crypto.getRandomValues`, which defers to OS.
+  */
++const Crypto = require('expo-crypto');
++
+ function randomBytes(bytesLength = 32) {
+-    if (crypto_1.crypto && typeof crypto_1.crypto.getRandomValues === 'function') {
+-        return crypto_1.crypto.getRandomValues(new Uint8Array(bytesLength));
++    try {
++        return Crypto.getRandomValues(new Uint8Array(bytesLength));
++    } catch (error) {
++        throw new Error('Failed to generate random bytes: ' + error.message);
+     }
+-    throw new Error('crypto.getRandomValues must be defined');
+ }
+ exports.randomBytes = randomBytes;
+ //# sourceMappingURL=utils.js.map
