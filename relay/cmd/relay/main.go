@@ -3,12 +3,24 @@ package main
 import (
 	"flag"
 	"log"
+	"path/filepath"
+	"runtime"
 
 	"github.com/openagentsinc/v3/relay/internal/nip01"
 	// "github.com/openagentsinc/v3/relay/internal/nip90"
 	// "github.com/openagentsinc/v3/relay/internal/whisper"
 	// "github.com/openagentsinc/v3/relay/internal/config"
 )
+
+func init() {
+	// Change the working directory to the project root
+	_, filename, _, _ := runtime.Caller(0)
+	dir := filepath.Join(filepath.Dir(filename), "../..")
+	err := os.Chdir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func main() {
 	// Parse command-line flags
