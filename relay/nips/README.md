@@ -14,11 +14,6 @@ _This is a mirror of the official Nostr repo, accessible [here](https://github.c
   - [Client to Relay](#client-to-relay)
   - [Relay to Client](#relay-to-client)
 - [Standardized Tags](#standardized-tags)
-- [Criteria for acceptance of NIPs](#criteria-for-acceptance-of-nips)
-- [Is this repository a centralizing factor?](#is-this-repository-a-centralizing-factor)
-- [How this repository works](#how-this-repository-works)
-- [Breaking Changes](#breaking-changes)
-- [License](#license)
 
 ---
 
