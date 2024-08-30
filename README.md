@@ -15,7 +15,7 @@ Preparing the next version of OpenAgents.
 ## Technologies
 
 - Bitcoin via Lightning
-- Nostr
+- Nostr (signed JSON over websockets)
 - React & React Native
 - Golang
 
