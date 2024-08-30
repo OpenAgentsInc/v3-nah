@@ -2,6 +2,10 @@
 
 Preparing the next version of OpenAgents.
 
+## Project structure
+- `mobile` - React Native mobile app
+- `relay` - A custom Nostr relay & NIP-90 service provider
+
 ## Principles
 
 - Maximize decentralization
