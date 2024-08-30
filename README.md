@@ -8,6 +8,7 @@ Preparing the next version of OpenAgents.
 
 ## Principles
 
+- Ease of use
 - Maximize decentralization
 - Minimize platform risk
 - Minimize third-party dependencies
