@@ -45,20 +45,28 @@ func (r *Relay) HandleWebSocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
+	log.Printf("Handling message: %s", string(message))
+
 	msg, err := ParseMessage(message)
 	if err != nil {
 		log.Println("Error parsing message:", err)
 		return
 	}
 
+	log.Printf("Parsed message type: %s", msg.Type)
+
 	switch msg.Type {
 	case EventMessage:
+		log.Println("Handling EventMessage")
 		r.handleEventMessage(conn, msg.Data.(*nostr.Event))
 	case ReqMessage:
+		log.Println("Handling ReqMessage")
 		r.handleReqMessage(conn, msg.Data.(*nostr.Filter))
 	case CloseMessage:
+		log.Println("Handling CloseMessage")
 		r.handleCloseMessage(conn, msg.Data.(string))
 	case AudioMessage:
+		log.Println("Handling AudioMessage")
 		r.handleAudioMessage(conn, msg.Data.(*AudioData))
 	default:
 		log.Println("Unknown message type:", msg.Type)
