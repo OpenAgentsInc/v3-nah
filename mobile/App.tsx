@@ -51,8 +51,8 @@ export default function App() {
         // Don't set transcription here, it will be set by the WebSocket message handler
       }
     } catch (error) {
-      console.error('Error processing audio:', error)
-      setTranscription('Error processing audio')
+      console.error('Error sending audio:', error)
+      setTranscription('Error sending audio')
       setIsProcessing(false)
     }
   }, [socket, stopRecording])
