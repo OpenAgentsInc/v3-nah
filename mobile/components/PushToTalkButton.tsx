@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { StyleSheet, TouchableOpacity, Text, View } from "react-native"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
 
 interface PushToTalkButtonProps {
@@ -10,9 +10,9 @@ interface PushToTalkButtonProps {
   isProcessing: boolean;
 }
 
-const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ 
-  onPressIn, 
-  onPressOut, 
+const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
+  onPressIn,
+  onPressOut,
   disabled,
   isRecording,
   isProcessing
@@ -32,8 +32,8 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
   };
 
   const getButtonText = () => {
-    if (isRecording) return "Recording...";
-    if (isProcessing) return "Processing...";
+    if (isRecording) return "Recording";
+    if (isProcessing) return "Processing";
     return "Push to talk";
   };
 
