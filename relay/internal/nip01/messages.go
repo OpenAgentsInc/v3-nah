@@ -105,6 +105,12 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 				return nil, fmt.Errorf("invalid created_at value: %v", err)
 			}
 			rawEvent["created_at"] = createdAtInt
+		case json.Number:
+			createdAtInt, err := createdAt.Int64()
+			if err != nil {
+				return nil, fmt.Errorf("invalid created_at value: %v", err)
+			}
+			rawEvent["created_at"] = createdAtInt
 		}
 		
 		eventJSON, err := json.Marshal(rawEvent)
