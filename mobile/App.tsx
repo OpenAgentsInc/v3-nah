@@ -1,5 +1,5 @@
 import "text-encoding-polyfill"
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { StatusBar } from "expo-status-bar"
 import { nip19 } from "nostr-tools"
 import { StyleSheet, Text, View, Image } from "react-native"
@@ -27,16 +27,16 @@ export default function App() {
     })()
   }, [])
 
-  const handlePressIn = async () => {
+  const handlePressIn = useCallback(async () => {
     if (permissionStatus !== 'granted') {
       console.log('Audio permission not granted')
       return
     }
     setTranscription(null)
     await startRecording()
-  }
+  }, [permissionStatus, startRecording])
 
-  const handlePressOut = async () => {
+  const handlePressOut = useCallback(async () => {
     if (!socket) {
       console.error('No WebSocket connection available')
       return
@@ -47,19 +47,16 @@ export default function App() {
       const audioUri = await stopRecording()
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
-        const result = await sendAudioToRelay(audioUri, socket)
-        // The result should now be the transcription
-        setTranscription(result)
-        setIsProcessing(false)
+        await sendAudioToRelay(audioUri, socket)
+        // Don't set transcription here, it will be set by the WebSocket message handler
       }
     } catch (error) {
       console.error('Error processing audio:', error)
       setTranscription('Error processing audio')
       setIsProcessing(false)
     }
-  }
+  }, [socket, stopRecording])
 
-  // Add this effect to listen for incoming messages
   useEffect(() => {
     if (socket) {
       const messageHandler = (event: MessageEvent) => {
