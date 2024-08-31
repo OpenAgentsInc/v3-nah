@@ -1,6 +1,7 @@
 import React, { useState } from "react"
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { StyleSheet, TouchableOpacity, View } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
+import CustomText from "./CustomText"
 
 interface PushToTalkButtonProps {
   onPressIn: () => void;
@@ -39,7 +40,7 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{getButtonText()}</Text>
+      <CustomText style={styles.text}>{getButtonText()}</CustomText>
       <TouchableOpacity
         style={[
           styles.button,
@@ -71,7 +72,6 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#999',
-    fontFamily: 'Courier New',
     fontSize: 16,
     marginBottom: 10,
   },
