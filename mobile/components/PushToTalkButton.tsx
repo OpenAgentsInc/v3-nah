@@ -63,6 +63,10 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
   },
   text: {
     color: '#fff',
