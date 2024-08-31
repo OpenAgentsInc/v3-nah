@@ -96,8 +96,14 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		}
 		
 		// Convert created_at to int64
-		if createdAt, ok := rawEvent["created_at"].(float64); ok {
-			rawEvent["created_at"] = int64(createdAt)
+		if createdAtStr, ok := rawEvent["created_at"].(string); ok {
+			createdAt, err := strconv.ParseInt(createdAtStr, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid created_at value: %v", err)
+			}
+			rawEvent["created_at"] = createdAt
+		} else if createdAtFloat, ok := rawEvent["created_at"].(float64); ok {
+			rawEvent["created_at"] = int64(createdAtFloat)
 		}
 		
 		eventJSON, err := json.Marshal(rawEvent)
@@ -111,6 +117,21 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 			return nil, err
 		}
 		return &Message{Type: EventMessage, Data: &event}, nil
+	case ReqMessage:
+		if len(data) < 2 {
+			return nil, fmt.Errorf("invalid REQ message format")
+		}
+		var subscriptionID string
+		err := json.Unmarshal(data[0], &subscriptionID)
+		if err != nil {
+			return nil, err
+		}
+		var filter nostr.Filter
+		err = json.Unmarshal(data[1], &filter)
+		if err != nil {
+			return nil, err
+		}
+		return &Message{Type: ReqMessage, Data: &nostr.ReqMessage{SubscriptionID: subscriptionID, Filter: filter}}, nil
 	case AudioMessage:
 		if len(data) != 1 {
 			return nil, fmt.Errorf("invalid AUDIO message format")
