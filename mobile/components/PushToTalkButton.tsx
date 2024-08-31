@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   text: {
-    color: '#fff',
+    color: '#999', // Darker color for status messages
     fontFamily: 'Courier New',
     fontSize: 16,
     marginBottom: 10,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   buttonPressed: {
-    backgroundColor: 'rgba(85, 85, 85, 0.7)', // Lighter opacity when pressed
+    backgroundColor: 'rgba(51, 51, 51, 0.3)', // Much lighter opacity when pressed
   },
   buttonDisabled: {
     opacity: 0.5,
