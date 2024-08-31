@@ -10,12 +10,15 @@
     "postinstall": "npx patch-package"
   },
   "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo/vector-icons": "^14.0.0",
     "@nostr-dev-kit/ndk": "^2.10.0",
     "expo": "~51.0.28",
     "expo-av": "~14.0.7",
     "expo-crypto": "^13.0.2",
+    "expo-font": "~12.0.9",
     "expo-secure-store": "~13.0.2",
+    "expo-splash-screen": "~0.27.5",
     "expo-status-bar": "~1.12.1",
     "nostr-tools": "^2.7.0",
     "nostr-tools_1_1_1": "npm:nostr-tools@^1.1.1",

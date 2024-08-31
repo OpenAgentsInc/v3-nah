@@ -1,24 +1,45 @@
 import "text-encoding-polyfill"
 import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
-import { nip19 } from "nostr-tools"
 import React, { useCallback, useEffect, useState } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { Image, StyleSheet, View, SafeAreaView } from "react-native"
 import { useStore } from "@/lib/store"
 import PushToTalkButton from "./components/PushToTalkButton"
+import RelayStatusIcon from "./components/RelayStatusIcon"
 import { sendAudioToRelay } from "./lib/sendAudioToRelay"
 import { useAudioRecording } from "./lib/useAudioRecording"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
+import { useFonts, JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono'
+import * as SplashScreen from 'expo-splash-screen'
+import CustomText from './components/CustomText'
+
+SplashScreen.preventAutoHideAsync()
 
 export default function App() {
   useNostrUser()
-  const userPubkey = useStore(state => state.userPubkey)
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [transcription, setTranscription] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'pending'>('pending')
+
+  const [fontsLoaded] = useFonts({
+    JetBrainsMono: JetBrainsMono_400Regular,
+  })
+
+  useEffect(() => {
+    async function prepare() {
+      await SplashScreen.preventAutoHideAsync()
+    }
+    prepare()
+  }, [])
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync()
+    }
+  }, [fontsLoaded])
 
   useEffect(() => {
     (async () => {
@@ -48,7 +69,6 @@ export default function App() {
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
         await sendAudioToRelay(audioUri, socket)
-        // Don't set transcription here, it will be set by the WebSocket message handler
       }
     } catch (error) {
       console.error('Error sending audio:', error)
@@ -73,70 +93,74 @@ export default function App() {
     }
   }, [socket])
 
+  if (!fontsLoaded) {
+    return null
+  }
+
   return (
-    <View style={styles.container}>
-      <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
-      {userPubkey && <Text style={styles.text}>{nip19.npubEncode(userPubkey)}</Text>}
-      <Text style={styles.connectionStatus}>
-        Relay: {isConnected ? 'Connected' : 'Disconnected'}
-      </Text>
-      <Text style={styles.recordingStatus}>
-        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Push to talk'}
-      </Text>
-      {transcription && (
-        <Text style={styles.transcription}>Transcription: {transcription}</Text>
-      )}
-      <PushToTalkButton
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={permissionStatus !== 'granted'}
-      />
-      <StatusBar style="light" />
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
+          <RelayStatusIcon isConnected={isConnected} />
+        </View>
+        <View style={styles.content}>
+          <View style={styles.transcriptionContainer}>
+            {transcription && (
+              <CustomText style={styles.transcription}>{transcription}</CustomText>
+            )}
+          </View>
+        </View>
+        <PushToTalkButton
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={permissionStatus !== 'granted'}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+        />
+        <StatusBar style="light" />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    height: 50,
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
+    width: 40,
+    height: 40,
   },
-  text: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 18,
-    paddingTop: 20,
+  content: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    textAlign: 'center',
-    fontWeight: 'bold'
+    marginTop: 10,
   },
-  connectionStatus: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 14,
-    paddingTop: 10,
-    textAlign: 'center',
-  },
-  recordingStatus: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 16,
-    paddingTop: 20,
-    textAlign: 'center',
+  transcriptionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 100,
   },
   transcription: {
     color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 14,
-    paddingTop: 20,
-    paddingHorizontal: 20,
+    fontSize: 18,
     textAlign: 'center',
-  }
+  },
 });
