@@ -81,14 +81,14 @@ export default function App() {
         {transcription && (
           <Text style={styles.transcription}>Transcription: {transcription}</Text>
         )}
-        <PushToTalkButton
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          disabled={permissionStatus !== 'granted'}
-          isRecording={isRecording}
-          isProcessing={isProcessing}
-        />
       </View>
+      <PushToTalkButton
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={permissionStatus !== 'granted'}
+        isRecording={isRecording}
+        isProcessing={isProcessing}
+      />
       <StatusBar style="light" />
     </View>
   );
@@ -121,6 +121,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier New',
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 20,
   },
 });
