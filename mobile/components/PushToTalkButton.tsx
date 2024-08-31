@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { StyleSheet, TouchableOpacity, Text, View } from "react-native"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
 
 interface PushToTalkButtonProps {
@@ -10,9 +10,9 @@ interface PushToTalkButtonProps {
   isProcessing: boolean;
 }
 
-const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ 
-  onPressIn, 
-  onPressOut, 
+const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
+  onPressIn,
+  onPressOut,
   disabled,
   isRecording,
   isProcessing
@@ -49,11 +49,12 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}
+        activeOpacity={0.7}
       >
         <MaterialIcons
           name="mic"
           size={40}
-          color={disabled ? '#666' : (isPressed ? '#ff4081' : '#fff')}
+          color={disabled ? '#666' : (isPressed ? '#FF0000' : '#fff')}
         />
       </TouchableOpacity>
     </View>
@@ -80,10 +81,10 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   buttonPressed: {
-    backgroundColor: 'rgba(51, 51, 51, 0.3)',
+    backgroundColor: 'rgba(51, 51, 51, 1)',
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.8,
   },
 });
 
