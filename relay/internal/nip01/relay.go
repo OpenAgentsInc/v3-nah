@@ -1,6 +1,7 @@
 package nip01
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
@@ -81,22 +82,26 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 			return
 		}
 		r.handleCloseMessage(conn, subscriptionID)
-	case AudioMessage:
-		log.Println("Handling AudioMessage")
-		audioData, ok := msg.Data.(*AudioData)
-		if !ok {
-			log.Println("Error: AudioMessage data is not of type *AudioData")
-			return
-		}
-		r.handleAudioMessage(conn, audioData)
 	default:
 		log.Println("Unknown message type:", msg.Type)
 	}
 }
 
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
-	// TODO: Implement event validation and storage
-	r.subscriptionManager.BroadcastEvent(event)
+	log.Printf("Handling event with kind: %d", event.Kind)
+
+	if event.Kind == 1234 { // Assuming 1234 is the kind for audio messages
+		var audioData AudioData
+		err := json.Unmarshal([]byte(event.Content), &audioData)
+		if err != nil {
+			log.Printf("Error unmarshaling audio data: %v", err)
+			return
+		}
+		r.handleAudioMessage(conn, &audioData)
+	} else {
+		// Handle other event types or broadcast to subscribers
+		r.subscriptionManager.BroadcastEvent(event)
+	}
 }
 
 func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg *nostr.ReqMessage) {
