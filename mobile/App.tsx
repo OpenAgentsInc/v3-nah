@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 100, // This pushes the transcription up
+    marginBottom: 100,
   },
   transcription: {
     color: '#fff',
     fontFamily: 'Courier New',
-    fontSize: 14,
+    fontSize: 18, // Increased from 14 to 18
     textAlign: 'center',
   },
 });
