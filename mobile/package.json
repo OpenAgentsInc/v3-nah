@@ -10,6 +10,7 @@
     "postinstall": "npx patch-package"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.0.0",
     "@nostr-dev-kit/ndk": "^2.10.0",
     "expo": "~51.0.28",
     "expo-av": "~14.0.7",
