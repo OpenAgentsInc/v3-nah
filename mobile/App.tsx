@@ -2,7 +2,7 @@ import "text-encoding-polyfill"
 import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useEffect, useState } from "react"
-import { Image, StyleSheet, Text, View, SafeAreaView } from "react-native"
+import { Image, SafeAreaView, StyleSheet, Text, View } from "react-native"
 import { useStore } from "@/lib/store"
 import PushToTalkButton from "./components/PushToTalkButton"
 import RelayStatusIcon from "./components/RelayStatusIcon"
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   transcription: {
     color: '#fff',
-    fontFamily: 'Courier New',
+    fontFamily: 'JetBrainsMono',
     fontSize: 18,
     textAlign: 'center',
   },
