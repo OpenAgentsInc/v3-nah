@@ -13,11 +13,17 @@ const (
 	CloseMessage   MessageType = "CLOSE"
 	NoticeMessage  MessageType = "NOTICE"
 	EoseMessage    MessageType = "EOSE"
+	AudioMessage   MessageType = "AUDIO" // New message type for audio
 )
 
 type Message struct {
 	Type MessageType `json:"type"`
 	Data interface{} `json:"data"`
+}
+
+type AudioData struct {
+	Audio  string `json:"audio"`
+	Format string `json:"format"`
 }
 
 func ParseMessage(data []byte) (*Message, error) {
@@ -42,6 +48,13 @@ func ParseMessage(data []byte) (*Message, error) {
 			return nil, err
 		}
 		msg.Data = &filter
+	case AudioMessage:
+		var audioData AudioData
+		err = json.Unmarshal(msg.Data.([]byte), &audioData)
+		if err != nil {
+			return nil, err
+		}
+		msg.Data = &audioData
 	}
 
 	return &msg, nil
@@ -79,5 +92,15 @@ func CreateEoseMessage(subscriptionID string) (*Message, error) {
 	return &Message{
 		Type: EoseMessage,
 		Data: subscriptionID,
+	}, nil
+}
+
+func CreateAudioResponseMessage(transcription string) (*Message, error) {
+	return &Message{
+		Type: EventMessage,
+		Data: &nostr.Event{
+			Kind:    1235, // Custom event kind for transcription response
+			Content: transcription,
+		},
 	}, nil
 }
