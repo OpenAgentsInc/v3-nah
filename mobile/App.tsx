@@ -80,7 +80,7 @@ export default function App() {
         </View>
         <View style={styles.content}>
           {transcription && (
-            <Text style={styles.transcription}>Transcription: {transcription}</Text>
+            <Text style={styles.transcription}>{transcription}</Text>
           )}
         </View>
         <PushToTalkButton
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 0,
     paddingHorizontal: 20,
-    height: 60,
+    height: 50, // Reduced from 60 to 50
   },
   logo: {
     width: 40,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 10, // Reduced from 20 to 10
   },
   transcription: {
     color: '#fff',
