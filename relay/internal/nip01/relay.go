@@ -71,7 +71,7 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
 			return
 		}
-		r.handleReqMessage(conn, reqMsg.SubscriptionID, &reqMsg.Filter)
+		r.handleReqMessage(conn, reqMsg)
 	case CloseMessage:
 		log.Println("Handling CloseMessage")
 		subscriptionID, ok := msg.Data.(string)
@@ -98,10 +98,10 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	r.subscriptionManager.BroadcastEvent(event)
 }
 
-func (r *Relay) handleReqMessage(conn *websocket.Conn, subscriptionID string, filter *nostr.Filter) {
+func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg *nostr.ReqMessage) {
 	// TODO: Implement subscription creation and event fetching
 	// For now, just create a subscription
-	sub := r.subscriptionManager.AddSubscription(subscriptionID, []*nostr.Filter{filter})
+	sub := r.subscriptionManager.AddSubscription(reqMsg.SubscriptionID, []*nostr.Filter{&reqMsg.Filter})
 	go r.handleSubscription(conn, sub)
 }
 
