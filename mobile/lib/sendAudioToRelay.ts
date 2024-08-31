@@ -1,39 +1,51 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 
-export async function sendAudioToRelay(audioUri: string): Promise<string> {
-  const relayUrl = 'https://your-relay-url.com/process-audio'; // Replace with your actual relay URL
+export async function sendAudioToRelay(audioUri: string, socket: WebSocket): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Read the audio file
+      const audioContent = await FileSystem.readAsStringAsync(audioUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-  try {
-    // Read the audio file
-    const audioContent = await FileSystem.readAsStringAsync(audioUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+      // Prepare the message
+      const message = JSON.stringify([
+        'EVENT',
+        {
+          kind: 1234, // Custom event kind for audio processing
+          content: JSON.stringify({
+            audio: audioContent,
+            format: Platform.OS === 'ios' ? 'caf' : 'webm', // Adjust based on your actual audio format
+          }),
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [],
+        },
+      ]);
 
-    // Prepare the request body
-    const body = JSON.stringify({
-      audio: audioContent,
-      format: Platform.OS === 'ios' ? 'caf' : 'webm', // Adjust based on your actual audio format
-    });
+      // Set up a one-time event listener for the response
+      const messageHandler = (event: MessageEvent) => {
+        const response = JSON.parse(event.data);
+        if (response[0] === 'EVENT' && response[1].kind === 1235) { // Custom event kind for transcription response
+          socket.removeEventListener('message', messageHandler);
+          resolve(JSON.parse(response[1].content).transcription);
+        }
+      };
 
-    // Send the request to the relay
-    const response = await fetch(relayUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-    });
+      socket.addEventListener('message', messageHandler);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Send the message
+      socket.send(message);
+
+      // Set a timeout for the response
+      setTimeout(() => {
+        socket.removeEventListener('message', messageHandler);
+        reject(new Error('Timeout waiting for transcription'));
+      }, 30000); // 30 seconds timeout
+
+    } catch (error) {
+      console.error('Error sending audio to relay:', error);
+      reject(error);
     }
-
-    const result = await response.json();
-    return result.transcription; // Assuming the relay returns a transcription
-
-  } catch (error) {
-    console.error('Error sending audio to relay:', error);
-    throw error;
-  }
+  });
 }
