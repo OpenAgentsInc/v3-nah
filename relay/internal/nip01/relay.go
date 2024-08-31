@@ -1,11 +1,13 @@
 package nip01
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Relay struct {
@@ -45,38 +47,103 @@ func (r *Relay) HandleWebSocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
+	log.Printf("Handling message: %s", string(message))
+
 	msg, err := ParseMessage(message)
 	if err != nil {
 		log.Println("Error parsing message:", err)
 		return
 	}
 
+	log.Printf("Parsed message type: %s", msg.Type)
+
 	switch msg.Type {
 	case EventMessage:
-		r.handleEventMessage(conn, msg.Data.(*nostr.Event))
+		log.Println("Handling EventMessage")
+		event, ok := msg.Data.(*nostr.Event)
+		if !ok {
+			log.Println("Error: EventMessage data is not of type *nostr.Event")
+			return
+		}
+		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		r.handleReqMessage(conn, msg.Data.(*nostr.Filter))
+		log.Println("Handling ReqMessage")
+		reqMsg, ok := msg.Data.(*nostr.ReqMessage)
+		if !ok {
+			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
+			return
+		}
+		r.handleReqMessage(conn, reqMsg)
 	case CloseMessage:
-		r.handleCloseMessage(conn, msg.Data.(string))
+		log.Println("Handling CloseMessage")
+		subscriptionID, ok := msg.Data.(string)
+		if !ok {
+			log.Println("Error: CloseMessage data is not of type string")
+			return
+		}
+		r.handleCloseMessage(conn, subscriptionID)
 	default:
 		log.Println("Unknown message type:", msg.Type)
 	}
 }
 
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
-	// TODO: Implement event validation and storage
-	r.subscriptionManager.BroadcastEvent(event)
+	log.Printf("Handling event with kind: %d", event.Kind)
+
+	if event.Kind == 1234 { // Assuming 1234 is the kind for audio messages
+		var audioData AudioData
+		err := json.Unmarshal([]byte(event.Content), &audioData)
+		if err != nil {
+			log.Printf("Error unmarshaling audio data: %v", err)
+			return
+		}
+		r.handleAudioMessage(conn, &audioData)
+	} else {
+		// Handle other event types or broadcast to subscribers
+		r.subscriptionManager.BroadcastEvent(event)
+	}
 }
 
-func (r *Relay) handleReqMessage(conn *websocket.Conn, filter *nostr.Filter) {
+func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg *nostr.ReqMessage) {
 	// TODO: Implement subscription creation and event fetching
 	// For now, just create a subscription
-	sub := r.subscriptionManager.AddSubscription("temp_id", []*nostr.Filter{filter})
+	sub := r.subscriptionManager.AddSubscription(reqMsg.SubscriptionID, []*nostr.Filter{&reqMsg.Filter})
 	go r.handleSubscription(conn, sub)
 }
 
 func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) {
 	r.subscriptionManager.RemoveSubscription(subscriptionID)
+}
+
+func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
+	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Audio))
+
+	// Transcribe the audio using Groq API
+	transcription, err := TranscribeAudio(audioData.Audio, audioData.Format)
+	if err != nil {
+		log.Printf("Error transcribing audio: %v", err)
+		transcription = "Error transcribing audio"
+	}
+
+	// Create a response event
+	responseEvent := &nostr.Event{
+		Kind:      1235, // Custom event kind for transcription response
+		Content:   transcription,
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	// Send the response back to the client
+	response, err := CreateEventMessage(responseEvent)
+	if err != nil {
+		log.Println("Error creating audio response message:", err)
+		return
+	}
+
+	err = conn.WriteJSON(response)
+	if err != nil {
+		log.Println("Error writing audio response to WebSocket:", err)
+	}
 }
 
 func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
