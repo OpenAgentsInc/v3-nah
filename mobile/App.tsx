@@ -2,7 +2,7 @@ import "text-encoding-polyfill"
 import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useEffect, useState } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { Image, StyleSheet, Text, View, SafeAreaView } from "react-native"
 import { useStore } from "@/lib/store"
 import PushToTalkButton from "./components/PushToTalkButton"
 import RelayStatusIcon from "./components/RelayStatusIcon"
@@ -72,29 +72,35 @@ export default function App() {
   }, [socket])
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
-        <RelayStatusIcon isConnected={isConnected} />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
+          <RelayStatusIcon isConnected={isConnected} />
+        </View>
+        <View style={styles.content}>
+          {transcription && (
+            <Text style={styles.transcription}>Transcription: {transcription}</Text>
+          )}
+        </View>
+        <PushToTalkButton
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={permissionStatus !== 'granted'}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+        />
+        <StatusBar style="light" />
       </View>
-      <View style={styles.content}>
-        {transcription && (
-          <Text style={styles.transcription}>Transcription: {transcription}</Text>
-        )}
-      </View>
-      <PushToTalkButton
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={permissionStatus !== 'granted'}
-        isRecording={isRecording}
-        isProcessing={isProcessing}
-      />
-      <StatusBar style="light" />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -103,8 +109,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 0,
     paddingHorizontal: 20,
+    height: 60,
   },
   logo: {
     width: 40,
@@ -115,6 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    marginTop: 20,
   },
   transcription: {
     color: '#fff',
