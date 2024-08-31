@@ -2,7 +2,7 @@ import "text-encoding-polyfill"
 import React, { useState, useEffect } from 'react'
 import { StatusBar } from "expo-status-bar"
 import { nip19 } from "nostr-tools"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View, Image } from "react-native"
 import { Audio } from 'expo-av'
 import { useStore } from "@/lib/store"
 import { useNostrUser } from "./lib/useNostrUser"
@@ -60,6 +60,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
       {userPubkey && <Text style={styles.text}>{nip19.npubEncode(userPubkey)}</Text>}
       <Text style={styles.connectionStatus}>
         Relay: {isConnected ? 'Connected' : 'Disconnected'}
@@ -86,6 +87,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   text: {
     color: '#fff',
