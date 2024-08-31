@@ -58,6 +58,8 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		r.handleReqMessage(conn, msg.Data.(*nostr.Filter))
 	case CloseMessage:
 		r.handleCloseMessage(conn, msg.Data.(string))
+	case AudioMessage:
+		r.handleAudioMessage(conn, msg.Data.(*AudioData))
 	default:
 		log.Println("Unknown message type:", msg.Type)
 	}
@@ -77,6 +79,23 @@ func (r *Relay) handleReqMessage(conn *websocket.Conn, filter *nostr.Filter) {
 
 func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) {
 	r.subscriptionManager.RemoveSubscription(subscriptionID)
+}
+
+func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
+	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Audio))
+
+	// For now, just return a dummy transcription
+	transcription := "This is a test transcription"
+	response, err := CreateAudioResponseMessage(transcription)
+	if err != nil {
+		log.Println("Error creating audio response message:", err)
+		return
+	}
+
+	err = conn.WriteJSON(response)
+	if err != nil {
+		log.Println("Error writing audio response to WebSocket:", err)
+	}
 }
 
 func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
