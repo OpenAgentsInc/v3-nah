@@ -46,7 +46,7 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ onPressIn, onPressO
 const styles = StyleSheet.create({
   button: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 60,
     alignSelf: 'center',
     backgroundColor: '#333',
     padding: 20,
