@@ -13,7 +13,7 @@ import PushToTalkButton from "./components/PushToTalkButton"
 export default function App() {
   useNostrUser()
   const userPubkey = useStore(state => state.userPubkey)
-  const { isConnected } = useRelayConnection()
+  const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [transcription, setTranscription] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -24,12 +24,17 @@ export default function App() {
   }
 
   const handlePressOut = async () => {
+    if (!socket) {
+      console.error('No WebSocket connection available')
+      return
+    }
+
     setIsProcessing(true)
     try {
       const audioUri = await stopRecording()
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
-        const result = await sendAudioToRelay(audioUri)
+        const result = await sendAudioToRelay(audioUri, socket)
         setTranscription(result)
       }
     } catch (error) {
