@@ -1,47 +1,31 @@
+import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 
-export async function sendAudioToRelay(audioUri: string, socket: WebSocket): Promise<string> {
+export async function sendAudioToRelay(audioUri: string, socket: WebSocket): Promise<void> {
   return new Promise(async (resolve, reject) => {
     try {
-      // Read the audio file
       const audioContent = await FileSystem.readAsStringAsync(audioUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Prepare the message
       const message = JSON.stringify([
         'EVENT',
         {
-          kind: 1234, // Custom event kind for audio processing
+          kind: 1234,
           content: JSON.stringify({
             audio: audioContent,
-            format: 'm4a', // Use m4a format for all platforms
+            format: 'm4a',
           }),
           created_at: Math.floor(Date.now() / 1000),
           tags: [],
         },
       ]);
 
-      // Set up a one-time event listener for the response
-      const messageHandler = (event: MessageEvent) => {
-        const response = JSON.parse(event.data);
-        if (response[0] === 'EVENT' && response[1].kind === 1235) { // Custom event kind for transcription response
-          socket.removeEventListener('message', messageHandler);
-          resolve(JSON.parse(response[1].content).transcription);
-        }
-      };
-
-      socket.addEventListener('message', messageHandler);
-
-      // Send the message
       socket.send(message);
 
-      // Set a timeout for the response
-      setTimeout(() => {
-        socket.removeEventListener('message', messageHandler);
-        reject(new Error('Timeout waiting for transcription'));
-      }, 30000); // 30 seconds timeout
-
+      // Instead of waiting for a response here, we'll resolve immediately
+      // The App component will handle the response through its WebSocket listener
+      resolve();
     } catch (error) {
       console.error('Error sending audio to relay:', error);
       reject(error);
