@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 
 export async function sendAudioToRelay(audioUri: string, socket: WebSocket): Promise<string> {
@@ -16,7 +15,7 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket): Pro
           kind: 1234, // Custom event kind for audio processing
           content: JSON.stringify({
             audio: audioContent,
-            format: Platform.OS === 'ios' ? 'caf' : 'webm', // Adjust based on your actual audio format
+            format: 'm4a', // Use m4a format for all platforms
           }),
           created_at: Math.floor(Date.now() / 1000),
           tags: [],
