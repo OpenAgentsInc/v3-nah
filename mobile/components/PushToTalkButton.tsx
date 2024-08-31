@@ -1,14 +1,22 @@
 import React, { useState } from "react"
-import { StyleSheet, TouchableOpacity } from "react-native"
+import { StyleSheet, TouchableOpacity, Text, View } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
 
 interface PushToTalkButtonProps {
   onPressIn: () => void;
   onPressOut: () => void;
   disabled?: boolean;
+  isRecording: boolean;
+  isProcessing: boolean;
 }
 
-const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ onPressIn, onPressOut, disabled }) => {
+const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ 
+  onPressIn, 
+  onPressOut, 
+  disabled,
+  isRecording,
+  isProcessing
+}) => {
   const [isPressed, setIsPressed] = useState(false);
 
   const handlePressIn = () => {
@@ -23,31 +31,46 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ onPressIn, onPressO
     onPressOut();
   };
 
+  const getButtonText = () => {
+    if (isRecording) return "Recording...";
+    if (isProcessing) return "Processing...";
+    return "Push to talk";
+  };
+
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        isPressed && styles.buttonPressed,
-        disabled && styles.buttonDisabled
-      ]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-    >
-      <MaterialIcons
-        name="mic"
-        size={40}
-        color={disabled ? '#666' : (isPressed ? '#ff4081' : '#fff')}
-      />
-    </TouchableOpacity>
+    <View style={styles.container}>
+      <Text style={styles.text}>{getButtonText()}</Text>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          isPressed && styles.buttonPressed,
+          disabled && styles.buttonDisabled
+        ]}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+      >
+        <MaterialIcons
+          name="mic"
+          size={40}
+          color={disabled ? '#666' : (isPressed ? '#ff4081' : '#fff')}
+        />
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+  },
+  text: {
+    color: '#fff',
+    fontFamily: 'Courier New',
+    fontSize: 16,
+    marginBottom: 10,
+  },
   button: {
-    position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
     backgroundColor: '#333',
     padding: 20,
     borderRadius: 50,
