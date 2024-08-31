@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from "react"
+import { StyleSheet, TouchableOpacity } from "react-native"
+import { MaterialIcons } from "@expo/vector-icons"
 
 interface PushToTalkButtonProps {
   onPressIn: () => void;
@@ -46,7 +46,7 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ onPressIn, onPressO
 const styles = StyleSheet.create({
   button: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 30,
     alignSelf: 'center',
     backgroundColor: '#333',
     padding: 20,

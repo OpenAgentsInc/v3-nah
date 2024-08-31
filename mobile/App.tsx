@@ -1,15 +1,15 @@
 import "text-encoding-polyfill"
-import React, { useState, useEffect, useCallback } from 'react'
+import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
 import { nip19 } from "nostr-tools"
-import { StyleSheet, Text, View, Image } from "react-native"
-import { Audio } from 'expo-av'
+import React, { useCallback, useEffect, useState } from "react"
+import { Image, StyleSheet, Text, View } from "react-native"
 import { useStore } from "@/lib/store"
+import PushToTalkButton from "./components/PushToTalkButton"
+import { sendAudioToRelay } from "./lib/sendAudioToRelay"
+import { useAudioRecording } from "./lib/useAudioRecording"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
-import { useAudioRecording } from "./lib/useAudioRecording"
-import { sendAudioToRelay } from "./lib/sendAudioToRelay"
-import PushToTalkButton from "./components/PushToTalkButton"
 
 export default function App() {
   useNostrUser()
@@ -81,13 +81,13 @@ export default function App() {
         Relay: {isConnected ? 'Connected' : 'Disconnected'}
       </Text>
       <Text style={styles.recordingStatus}>
-        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Press and hold to speak'}
+        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Push to talk'}
       </Text>
       {transcription && (
         <Text style={styles.transcription}>Transcription: {transcription}</Text>
       )}
-      <PushToTalkButton 
-        onPressIn={handlePressIn} 
+      <PushToTalkButton
+        onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={permissionStatus !== 'granted'}
       />
