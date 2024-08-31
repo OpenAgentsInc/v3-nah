@@ -73,19 +73,22 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
-      <RelayStatusIcon isConnected={isConnected} />
-      {transcription && (
-        <Text style={styles.transcription}>Transcription: {transcription}</Text>
-      )}
-      <Text style={styles.pushToTalkText}>
-        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Push to talk'}
-      </Text>
-      <PushToTalkButton
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={permissionStatus !== 'granted'}
-      />
+      <View style={styles.header}>
+        <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
+        <RelayStatusIcon isConnected={isConnected} />
+      </View>
+      <View style={styles.content}>
+        {transcription && (
+          <Text style={styles.transcription}>Transcription: {transcription}</Text>
+        )}
+        <PushToTalkButton
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={permissionStatus !== 'granted'}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+        />
+      </View>
       <StatusBar style="light" />
     </View>
   );
@@ -95,29 +98,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 20,
   },
   logo: {
-    width: 100,
-    height: 100,
-    position: 'absolute',
-    top: 40,
-    left: 20,
+    width: 40,
+    height: 40,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   transcription: {
     color: '#fff',
     fontFamily: 'Courier New',
     fontSize: 14,
-    paddingHorizontal: 20,
     textAlign: 'center',
     marginBottom: 20,
-  },
-  pushToTalkText: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 10,
   },
 });
