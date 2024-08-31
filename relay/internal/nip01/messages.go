@@ -154,10 +154,10 @@ func CreateEventMessage(event *nostr.Event) (*Message, error) {
 	}, nil
 }
 
-func CreateReqMessage(filter *nostr.Filter) (*Message, error) {
+func CreateReqMessage(reqMsg *nostr.ReqMessage) (*Message, error) {
 	return &Message{
 		Type: ReqMessage,
-		Data: filter,
+		Data: reqMsg,
 	}, nil
 }
 
