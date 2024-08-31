@@ -32,8 +32,8 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({
   };
 
   const getButtonText = () => {
-    if (isRecording) return "Recording...";
-    if (isProcessing) return "Processing...";
+    if (isRecording) return "Recording";
+    if (isProcessing) return "Processing";
     return "Push to talk";
   };
 
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   text: {
-    color: '#999', // Darker color for status messages
+    color: '#999',
     fontFamily: 'Courier New',
     fontSize: 16,
     marginBottom: 10,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   buttonPressed: {
-    backgroundColor: 'rgba(51, 51, 51, 0.3)', // Much lighter opacity when pressed
+    backgroundColor: 'rgba(51, 51, 51, 0.3)',
   },
   buttonDisabled: {
     opacity: 0.5,
