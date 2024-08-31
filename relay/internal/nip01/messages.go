@@ -8,7 +8,80 @@ import (
 	"strconv"
 )
 
-// ... (keep the existing code until the handleArrayMessage function)
+type MessageType string
+
+const (
+	EventMessage   MessageType = "EVENT"
+	ReqMessage     MessageType = "REQ"
+	CloseMessage   MessageType = "CLOSE"
+	NoticeMessage  MessageType = "NOTICE"
+	EoseMessage    MessageType = "EOSE"
+	AudioMessage   MessageType = "AUDIO"
+)
+
+type Message struct {
+	Type MessageType `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+type AudioData struct {
+	Audio  string `json:"audio"`
+	Format string `json:"format"`
+}
+
+func ParseMessage(data []byte) (*Message, error) {
+	log.Printf("Received raw message: %s", string(data))
+
+	var arrayMsg []json.RawMessage
+	err := json.Unmarshal(data, &arrayMsg)
+	if err == nil && len(arrayMsg) > 0 {
+		log.Printf("Message is an array with %d elements", len(arrayMsg))
+		var msgType string
+		err = json.Unmarshal(arrayMsg[0], &msgType)
+		if err == nil {
+			log.Printf("Message type: %s", msgType)
+			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
+		}
+	}
+
+	var msg Message
+	err = json.Unmarshal(data, &msg)
+	if err != nil {
+		log.Printf("Error unmarshaling as Message struct: %v", err)
+		return nil, err
+	}
+
+	log.Printf("Parsed message type: %s", msg.Type)
+
+	switch msg.Type {
+	case EventMessage:
+		var event nostr.Event
+		err = json.Unmarshal(msg.Data.([]byte), &event)
+		if err != nil {
+			log.Printf("Error unmarshaling EventMessage data: %v", err)
+			return nil, err
+		}
+		msg.Data = &event
+	case ReqMessage:
+		var filter nostr.Filter
+		err = json.Unmarshal(msg.Data.([]byte), &filter)
+		if err != nil {
+			log.Printf("Error unmarshaling ReqMessage data: %v", err)
+			return nil, err
+		}
+		msg.Data = &filter
+	case AudioMessage:
+		var audioData AudioData
+		err = json.Unmarshal(msg.Data.([]byte), &audioData)
+		if err != nil {
+			log.Printf("Error unmarshaling AudioMessage data: %v", err)
+			return nil, err
+		}
+		msg.Data = &audioData
+	}
+
+	return &msg, nil
+}
 
 func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, error) {
 	switch msgType {
@@ -75,4 +148,47 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 	}
 }
 
-// ... (keep the rest of the existing code)
+func CreateEventMessage(event *nostr.Event) (*Message, error) {
+	return &Message{
+		Type: EventMessage,
+		Data: event,
+	}, nil
+}
+
+func CreateReqMessage(reqMsg *nostr.ReqMessage) (*Message, error) {
+	return &Message{
+		Type: ReqMessage,
+		Data: reqMsg,
+	}, nil
+}
+
+func CreateCloseMessage(subscriptionID string) (*Message, error) {
+	return &Message{
+		Type: CloseMessage,
+		Data: subscriptionID,
+	}, nil
+}
+
+func CreateNoticeMessage(message string) (*Message, error) {
+	return &Message{
+		Type: NoticeMessage,
+		Data: message,
+	}, nil
+}
+
+func CreateEoseMessage(subscriptionID string) (*Message, error) {
+	return &Message{
+		Type: EoseMessage,
+		Data: subscriptionID,
+	}, nil
+}
+
+func CreateAudioResponseMessage(transcription string) (*Message, error) {
+	return &Message{
+		Type: EventMessage,
+		Data: &nostr.Event{
+			Kind:    1235, // Custom event kind for transcription response
+			Content: transcription,
+		},
+	}, nil
+}
