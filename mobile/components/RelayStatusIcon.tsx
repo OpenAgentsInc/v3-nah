@@ -13,12 +13,9 @@ const RelayStatusIcon: React.FC<RelayStatusIconProps> = ({ isConnected }) => {
 
 const styles = StyleSheet.create({
   icon: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    position: 'absolute',
-    top: 40,
-    right: 20,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   connected: {
     backgroundColor: '#4CAF50',
