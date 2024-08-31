@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
+	"strconv"
 )
 
 type MessageType string
@@ -15,7 +16,7 @@ const (
 	CloseMessage   MessageType = "CLOSE"
 	NoticeMessage  MessageType = "NOTICE"
 	EoseMessage    MessageType = "EOSE"
-	AudioMessage   MessageType = "AUDIO" // New message type for audio
+	AudioMessage   MessageType = "AUDIO"
 )
 
 type Message struct {
@@ -31,24 +32,18 @@ type AudioData struct {
 func ParseMessage(data []byte) (*Message, error) {
 	log.Printf("Received raw message: %s", string(data))
 
-	// Try to unmarshal as an array first
 	var arrayMsg []json.RawMessage
 	err := json.Unmarshal(data, &arrayMsg)
-	if err == nil {
+	if err == nil && len(arrayMsg) > 0 {
 		log.Printf("Message is an array with %d elements", len(arrayMsg))
-		if len(arrayMsg) > 0 {
-			// Check if the first element is a string (message type)
-			var msgType string
-			err = json.Unmarshal(arrayMsg[0], &msgType)
-			if err == nil {
-				log.Printf("Message type: %s", msgType)
-				// Handle array-style messages
-				return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
-			}
+		var msgType string
+		err = json.Unmarshal(arrayMsg[0], &msgType)
+		if err == nil {
+			log.Printf("Message type: %s", msgType)
+			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
 		}
 	}
 
-	// If not an array, try to unmarshal as a regular Message struct
 	var msg Message
 	err = json.Unmarshal(data, &msg)
 	if err != nil {
@@ -94,8 +89,24 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		if len(data) != 1 {
 			return nil, fmt.Errorf("invalid EVENT message format")
 		}
+		var rawEvent map[string]interface{}
+		err := json.Unmarshal(data[0], &rawEvent)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Convert created_at to int64
+		if createdAt, ok := rawEvent["created_at"].(float64); ok {
+			rawEvent["created_at"] = int64(createdAt)
+		}
+		
+		eventJSON, err := json.Marshal(rawEvent)
+		if err != nil {
+			return nil, err
+		}
+		
 		var event nostr.Event
-		err := json.Unmarshal(data[0], &event)
+		err = json.Unmarshal(eventJSON, &event)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +121,6 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 			return nil, err
 		}
 		return &Message{Type: AudioMessage, Data: &audioData}, nil
-	// Add other message types as needed
 	default:
 		return nil, fmt.Errorf("unsupported array message type: %s", msgType)
 	}
