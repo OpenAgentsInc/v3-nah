@@ -1,11 +1,11 @@
 import "text-encoding-polyfill"
 import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
-import { nip19 } from "nostr-tools"
 import React, { useCallback, useEffect, useState } from "react"
 import { Image, StyleSheet, Text, View } from "react-native"
 import { useStore } from "@/lib/store"
 import PushToTalkButton from "./components/PushToTalkButton"
+import RelayStatusIcon from "./components/RelayStatusIcon"
 import { sendAudioToRelay } from "./lib/sendAudioToRelay"
 import { useAudioRecording } from "./lib/useAudioRecording"
 import { useNostrUser } from "./lib/useNostrUser"
@@ -13,7 +13,6 @@ import { useRelayConnection } from "./lib/useRelayConnection"
 
 export default function App() {
   useNostrUser()
-  const userPubkey = useStore(state => state.userPubkey)
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [transcription, setTranscription] = useState<string | null>(null)
@@ -48,7 +47,6 @@ export default function App() {
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
         await sendAudioToRelay(audioUri, socket)
-        // Don't set transcription here, it will be set by the WebSocket message handler
       }
     } catch (error) {
       console.error('Error sending audio:', error)
@@ -76,16 +74,13 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Image source={require('./assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
-      {userPubkey && <Text style={styles.text}>{nip19.npubEncode(userPubkey)}</Text>}
-      <Text style={styles.connectionStatus}>
-        Relay: {isConnected ? 'Connected' : 'Disconnected'}
-      </Text>
-      <Text style={styles.recordingStatus}>
-        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Push to talk'}
-      </Text>
+      <RelayStatusIcon isConnected={isConnected} />
       {transcription && (
         <Text style={styles.transcription}>Transcription: {transcription}</Text>
       )}
+      <Text style={styles.pushToTalkText}>
+        {isRecording ? 'Recording...' : isProcessing ? 'Processing...' : 'Push to talk'}
+      </Text>
       <PushToTalkButton
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -104,39 +99,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-  },
-  text: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 18,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    textAlign: 'center',
-    fontWeight: 'bold'
-  },
-  connectionStatus: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 14,
-    paddingTop: 10,
-    textAlign: 'center',
-  },
-  recordingStatus: {
-    color: '#fff',
-    fontFamily: 'Courier New',
-    fontSize: 16,
-    paddingTop: 20,
-    textAlign: 'center',
+    width: 100,
+    height: 100,
+    position: 'absolute',
+    top: 40,
+    left: 20,
   },
   transcription: {
     color: '#fff',
     fontFamily: 'Courier New',
     fontSize: 14,
-    paddingTop: 20,
     paddingHorizontal: 20,
     textAlign: 'center',
-  }
+    marginBottom: 20,
+  },
+  pushToTalkText: {
+    color: '#fff',
+    fontFamily: 'Courier New',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
 });
