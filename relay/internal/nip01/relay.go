@@ -58,16 +58,36 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 	switch msg.Type {
 	case EventMessage:
 		log.Println("Handling EventMessage")
-		r.handleEventMessage(conn, msg.Data.(*nostr.Event))
+		event, ok := msg.Data.(*nostr.Event)
+		if !ok {
+			log.Println("Error: EventMessage data is not of type *nostr.Event")
+			return
+		}
+		r.handleEventMessage(conn, event)
 	case ReqMessage:
 		log.Println("Handling ReqMessage")
-		r.handleReqMessage(conn, msg.Data.(*nostr.Filter))
+		filter, ok := msg.Data.(*nostr.Filter)
+		if !ok {
+			log.Println("Error: ReqMessage data is not of type *nostr.Filter")
+			return
+		}
+		r.handleReqMessage(conn, filter)
 	case CloseMessage:
 		log.Println("Handling CloseMessage")
-		r.handleCloseMessage(conn, msg.Data.(string))
+		subscriptionID, ok := msg.Data.(string)
+		if !ok {
+			log.Println("Error: CloseMessage data is not of type string")
+			return
+		}
+		r.handleCloseMessage(conn, subscriptionID)
 	case AudioMessage:
 		log.Println("Handling AudioMessage")
-		r.handleAudioMessage(conn, msg.Data.(*AudioData))
+		audioData, ok := msg.Data.(*AudioData)
+		if !ok {
+			log.Println("Error: AudioMessage data is not of type *AudioData")
+			return
+		}
+		r.handleAudioMessage(conn, audioData)
 	default:
 		log.Println("Unknown message type:", msg.Type)
 	}
