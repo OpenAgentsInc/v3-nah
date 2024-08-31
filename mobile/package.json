@@ -12,6 +12,7 @@
   "dependencies": {
     "@nostr-dev-kit/ndk": "^2.10.0",
     "expo": "~51.0.28",
+    "expo-av": "~14.0.7",
     "expo-crypto": "^13.0.2",
     "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
