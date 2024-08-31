@@ -48,15 +48,33 @@ export default function App() {
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
         const result = await sendAudioToRelay(audioUri, socket)
+        // The result should now be the transcription
         setTranscription(result)
+        setIsProcessing(false)
       }
     } catch (error) {
       console.error('Error processing audio:', error)
       setTranscription('Error processing audio')
-    } finally {
       setIsProcessing(false)
     }
   }
+
+  // Add this effect to listen for incoming messages
+  useEffect(() => {
+    if (socket) {
+      const messageHandler = (event: MessageEvent) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'EVENT' && data.data.kind === 1235) {
+          setTranscription(data.data.content)
+          setIsProcessing(false)
+        }
+      }
+      socket.addEventListener('message', messageHandler)
+      return () => {
+        socket.removeEventListener('message', messageHandler)
+      }
+    }
+  }, [socket])
 
   return (
     <View style={styles.container}>
