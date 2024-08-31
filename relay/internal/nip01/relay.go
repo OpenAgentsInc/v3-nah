@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Relay struct {
@@ -112,9 +113,23 @@ func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) 
 func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Audio))
 
-	// For now, just return a dummy transcription
-	transcription := "This is a test transcription"
-	response, err := CreateAudioResponseMessage(transcription)
+	// Transcribe the audio using Groq API
+	transcription, err := TranscribeAudio(audioData.Audio, audioData.Format)
+	if err != nil {
+		log.Printf("Error transcribing audio: %v", err)
+		transcription = "Error transcribing audio"
+	}
+
+	// Create a response event
+	responseEvent := &nostr.Event{
+		Kind:      1235, // Custom event kind for transcription response
+		Content:   transcription,
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	// Send the response back to the client
+	response, err := CreateEventMessage(responseEvent)
 	if err != nil {
 		log.Println("Error creating audio response message:", err)
 		return
