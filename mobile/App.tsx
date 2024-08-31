@@ -2,7 +2,7 @@ import "text-encoding-polyfill"
 import { Audio } from "expo-av"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useEffect, useState } from "react"
-import { Image, StyleSheet, View, SafeAreaView } from "react-native"
+import { Image, StyleSheet, Text, View, SafeAreaView } from "react-native"
 import { useStore } from "@/lib/store"
 import PushToTalkButton from "./components/PushToTalkButton"
 import RelayStatusIcon from "./components/RelayStatusIcon"
@@ -10,11 +10,6 @@ import { sendAudioToRelay } from "./lib/sendAudioToRelay"
 import { useAudioRecording } from "./lib/useAudioRecording"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
-import { useFonts, JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono'
-import * as SplashScreen from 'expo-splash-screen'
-import CustomText from './components/CustomText'
-
-SplashScreen.preventAutoHideAsync()
 
 export default function App() {
   useNostrUser()
@@ -23,23 +18,6 @@ export default function App() {
   const [transcription, setTranscription] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'pending'>('pending')
-
-  const [fontsLoaded] = useFonts({
-    JetBrainsMono: JetBrainsMono_400Regular,
-  })
-
-  useEffect(() => {
-    async function prepare() {
-      await SplashScreen.preventAutoHideAsync()
-    }
-    prepare()
-  }, [])
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded])
 
   useEffect(() => {
     (async () => {
@@ -53,7 +31,8 @@ export default function App() {
       console.log('Audio permission not granted')
       return
     }
-    setTranscription(null)
+    // Remove the line that clears the transcription
+    // setTranscription(null)
     await startRecording()
   }, [permissionStatus, startRecording])
 
@@ -93,10 +72,6 @@ export default function App() {
     }
   }, [socket])
 
-  if (!fontsLoaded) {
-    return null
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -107,7 +82,7 @@ export default function App() {
         <View style={styles.content}>
           <View style={styles.transcriptionContainer}>
             {transcription && (
-              <CustomText style={styles.transcription}>{transcription}</CustomText>
+              <Text style={styles.transcription}>{transcription}</Text>
             )}
           </View>
         </View>
@@ -160,6 +135,7 @@ const styles = StyleSheet.create({
   },
   transcription: {
     color: '#fff',
+    fontFamily: 'Courier New',
     fontSize: 18,
     textAlign: 'center',
   },
