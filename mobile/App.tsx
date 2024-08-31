@@ -1,8 +1,9 @@
 import "text-encoding-polyfill"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StatusBar } from "expo-status-bar"
 import { nip19 } from "nostr-tools"
 import { StyleSheet, Text, View } from "react-native"
+import { Audio } from 'expo-av'
 import { useStore } from "@/lib/store"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
@@ -17,8 +18,20 @@ export default function App() {
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [transcription, setTranscription] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'pending'>('pending')
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Audio.requestPermissionsAsync()
+      setPermissionStatus(status === 'granted' ? 'granted' : 'denied')
+    })()
+  }, [])
 
   const handlePressIn = async () => {
+    if (permissionStatus !== 'granted') {
+      console.log('Audio permission not granted')
+      return
+    }
     setTranscription(null)
     await startRecording()
   }
@@ -57,7 +70,11 @@ export default function App() {
       {transcription && (
         <Text style={styles.transcription}>Transcription: {transcription}</Text>
       )}
-      <PushToTalkButton onPressIn={handlePressIn} onPressOut={handlePressOut} />
+      <PushToTalkButton 
+        onPressIn={handlePressIn} 
+        onPressOut={handlePressOut}
+        disabled={permissionStatus !== 'granted'}
+      />
       <StatusBar style="light" />
     </View>
   );
