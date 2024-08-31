@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface PushToTalkButtonProps {
   onPressIn: () => void;
@@ -33,10 +34,10 @@ const PushToTalkButton: React.FC<PushToTalkButtonProps> = ({ onPressIn, onPressO
       onPressOut={handlePressOut}
       disabled={disabled}
     >
-      <Image
-        source={require('../assets/sqlogo-t.png')}
-        style={[styles.image, disabled && styles.imageDisabled]}
-        resizeMode="contain"
+      <MaterialIcons
+        name="mic"
+        size={40}
+        color={disabled ? '#666' : (isPressed ? '#ff4081' : '#fff')}
       />
     </TouchableOpacity>
   );
@@ -47,20 +48,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     alignSelf: 'center',
-    padding: 10,
+    backgroundColor: '#333',
+    padding: 20,
     borderRadius: 50,
   },
   buttonPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: '#555',
   },
   buttonDisabled: {
-    opacity: 0.5,
-  },
-  image: {
-    width: 80,
-    height: 80,
-  },
-  imageDisabled: {
     opacity: 0.5,
   },
 });
