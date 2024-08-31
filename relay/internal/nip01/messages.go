@@ -6,6 +6,7 @@ import (
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
 	"strconv"
+	"time"
 )
 
 type MessageType string
@@ -95,35 +96,50 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 			return nil, err
 		}
 		
-		// Convert created_at to int64
-		switch createdAt := rawEvent["created_at"].(type) {
-		case float64:
-			rawEvent["created_at"] = int64(createdAt)
-		case string:
-			createdAtInt, err := strconv.ParseInt(createdAt, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("invalid created_at value: %v", err)
-			}
-			rawEvent["created_at"] = createdAtInt
-		case json.Number:
-			createdAtInt, err := createdAt.Int64()
-			if err != nil {
-				return nil, fmt.Errorf("invalid created_at value: %v", err)
-			}
-			rawEvent["created_at"] = createdAtInt
+		// Manually construct the Event struct
+		event := &nostr.Event{}
+		
+		if id, ok := rawEvent["id"].(string); ok {
+			event.ID = id
+		}
+		if pubkey, ok := rawEvent["pubkey"].(string); ok {
+			event.PubKey = pubkey
+		}
+		if kind, ok := rawEvent["kind"].(float64); ok {
+			event.Kind = int(kind)
+		}
+		if content, ok := rawEvent["content"].(string); ok {
+			event.Content = content
+		}
+		if sig, ok := rawEvent["sig"].(string); ok {
+			event.Sig = sig
 		}
 		
-		eventJSON, err := json.Marshal(rawEvent)
-		if err != nil {
-			return nil, err
+		// Handle created_at
+		if createdAt, ok := rawEvent["created_at"].(float64); ok {
+			event.CreatedAt = time.Unix(int64(createdAt), 0)
+		} else if createdAtStr, ok := rawEvent["created_at"].(string); ok {
+			if createdAtInt, err := strconv.ParseInt(createdAtStr, 10, 64); err == nil {
+				event.CreatedAt = time.Unix(createdAtInt, 0)
+			}
 		}
 		
-		var event nostr.Event
-		err = json.Unmarshal(eventJSON, &event)
-		if err != nil {
-			return nil, err
+		// Handle tags
+		if tags, ok := rawEvent["tags"].([]interface{}); ok {
+			for _, tag := range tags {
+				if tagSlice, ok := tag.([]interface{}); ok {
+					var stringSlice []string
+					for _, item := range tagSlice {
+						if str, ok := item.(string); ok {
+							stringSlice = append(stringSlice, str)
+						}
+					}
+					event.Tags = append(event.Tags, stringSlice)
+				}
+			}
 		}
-		return &Message{Type: EventMessage, Data: &event}, nil
+		
+		return &Message{Type: EventMessage, Data: event}, nil
 	case ReqMessage:
 		if len(data) < 2 {
 			return nil, fmt.Errorf("invalid REQ message format")
