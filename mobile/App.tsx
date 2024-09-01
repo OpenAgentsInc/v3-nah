@@ -60,7 +60,8 @@ export default function App() {
     if (socket) {
       const messageHandler = (event: MessageEvent) => {
         const data = JSON.parse(event.data)
-        if (data.type === 'EVENT' && data.data.kind === 1235) {
+        console.log(data)
+        if (data.type === 'EVENT' && data.data.kind === 6252) {
           setTranscription(data.data.content)
           setIsProcessing(false)
         }

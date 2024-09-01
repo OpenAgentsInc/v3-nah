@@ -3,21 +3,22 @@ package nip01
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/openagentsinc/v3/relay/internal/nostr"
 )
 
 type MessageType string
 
 const (
-	EventMessage   MessageType = "EVENT"
-	ReqMessage     MessageType = "REQ"
-	CloseMessage   MessageType = "CLOSE"
-	NoticeMessage  MessageType = "NOTICE"
-	EoseMessage    MessageType = "EOSE"
-	AudioMessage   MessageType = "AUDIO"
+	EventMessage  MessageType = "EVENT"
+	ReqMessage    MessageType = "REQ"
+	CloseMessage  MessageType = "CLOSE"
+	NoticeMessage MessageType = "NOTICE"
+	EoseMessage   MessageType = "EOSE"
+	AudioMessage  MessageType = "AUDIO"
 )
 
 type Message struct {
@@ -31,16 +32,13 @@ type AudioData struct {
 }
 
 func ParseMessage(data []byte) (*Message, error) {
-	log.Printf("Received raw message: %s", string(data))
-
 	var arrayMsg []json.RawMessage
 	err := json.Unmarshal(data, &arrayMsg)
 	if err == nil && len(arrayMsg) > 0 {
-		log.Printf("Message is an array with %d elements", len(arrayMsg))
 		var msgType string
 		err = json.Unmarshal(arrayMsg[0], &msgType)
 		if err == nil {
-			log.Printf("Message type: %s", msgType)
+			log.Printf("Received message type: %s", msgType)
 			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
 		}
 	}
@@ -52,7 +50,7 @@ func ParseMessage(data []byte) (*Message, error) {
 		return nil, err
 	}
 
-	log.Printf("Parsed message type: %s", msg.Type)
+	// log.Printf("Parsed message type: %s", msg.Type)
 
 	switch msg.Type {
 	case EventMessage:
@@ -95,10 +93,10 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Manually construct the Event struct
 		event := &nostr.Event{}
-		
+
 		if id, ok := rawEvent["id"].(string); ok {
 			event.ID = id
 		}
@@ -114,7 +112,7 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		if sig, ok := rawEvent["sig"].(string); ok {
 			event.Sig = sig
 		}
-		
+
 		// Handle created_at
 		if createdAt, ok := rawEvent["created_at"].(float64); ok {
 			event.CreatedAt = time.Unix(int64(createdAt), 0)
@@ -123,7 +121,7 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 				event.CreatedAt = time.Unix(createdAtInt, 0)
 			}
 		}
-		
+
 		// Handle tags
 		if tags, ok := rawEvent["tags"].([]interface{}); ok {
 			for _, tag := range tags {
@@ -138,7 +136,7 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 				}
 			}
 		}
-		
+
 		return &Message{Type: EventMessage, Data: event}, nil
 	case ReqMessage:
 		if len(data) < 2 {
@@ -209,7 +207,7 @@ func CreateAudioResponseMessage(transcription string) (*Message, error) {
 	return &Message{
 		Type: EventMessage,
 		Data: &nostr.Event{
-			Kind:    1235, // Custom event kind for transcription response
+			Kind:    6252, // Custom event kind for transcription response
 			Content: transcription,
 		},
 	}, nil

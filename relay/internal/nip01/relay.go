@@ -2,12 +2,13 @@ package nip01
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
-	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/openagentsinc/v3/relay/internal/nostr"
 )
 
 type Relay struct {
@@ -47,19 +48,14 @@ func (r *Relay) HandleWebSocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
-	log.Printf("Handling message: %s", string(message))
-
 	msg, err := ParseMessage(message)
 	if err != nil {
 		log.Println("Error parsing message:", err)
 		return
 	}
 
-	log.Printf("Parsed message type: %s", msg.Type)
-
 	switch msg.Type {
 	case EventMessage:
-		log.Println("Handling EventMessage")
 		event, ok := msg.Data.(*nostr.Event)
 		if !ok {
 			log.Println("Error: EventMessage data is not of type *nostr.Event")
@@ -67,7 +63,6 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		log.Println("Handling ReqMessage")
 		reqMsg, ok := msg.Data.(*nostr.ReqMessage)
 		if !ok {
 			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
@@ -75,7 +70,6 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleReqMessage(conn, reqMsg)
 	case CloseMessage:
-		log.Println("Handling CloseMessage")
 		subscriptionID, ok := msg.Data.(string)
 		if !ok {
 			log.Println("Error: CloseMessage data is not of type string")
@@ -90,7 +84,7 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
-	if event.Kind == 1234 { // Assuming 1234 is the kind for audio messages
+	if event.Kind == 5252 {
 		var audioData AudioData
 		err := json.Unmarshal([]byte(event.Content), &audioData)
 		if err != nil {
@@ -127,7 +121,7 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 
 	// Create a response event
 	responseEvent := &nostr.Event{
-		Kind:      1235, // Custom event kind for transcription response
+		Kind:      6252, // Updated event kind for transcription response
 		Content:   transcription,
 		CreatedAt: time.Now(),
 		Tags:      [][]string{},
