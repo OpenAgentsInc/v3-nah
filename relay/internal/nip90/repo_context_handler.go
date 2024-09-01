@@ -1,6 +1,7 @@
 package nip90
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -31,7 +32,6 @@ func GetRepoContext(repo string) string {
 }
 
 func parseRepo(repo string) (string, string) {
-	// Check if the repo is a URL
 	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") {
 		parsedURL, err := url.Parse(repo)
 		if err != nil {
@@ -44,7 +44,6 @@ func parseRepo(repo string) (string, string) {
 		return parts[1], parts[2]
 	}
 
-	// If not a URL, expect the format "owner/repo"
 	parts := strings.Split(repo, "/")
 	if len(parts) != 2 {
 		return "", ""
@@ -53,77 +52,116 @@ func parseRepo(repo string) (string, string) {
 }
 
 func analyzeRepository(owner, repo string) (string, error) {
-	files := []string{
-		"README.md",
-		"go.mod",
-		"main.go",
-		"relay/internal/nip90/handler.go",
-		"relay/internal/groq/tool_use.go",
-	}
-
 	var context strings.Builder
 	context.WriteString(fmt.Sprintf("Repository: https://github.com/%s/%s\n\n", owner, repo))
 
-	for _, file := range files {
-		content, err := github.ViewFile(owner, repo, file, "")
-		if err != nil {
-			if err == github.ErrGitHubTokenNotSet {
-				return "", err
-			}
-			log.Printf("Error viewing file %s: %v", file, err)
-			continue
-		}
-
-		analysis, err := analyzeFileContent(file, content)
-		if err != nil {
-			log.Printf("Error analyzing file %s: %v", file, err)
-			continue
-		}
-
-		context.WriteString(fmt.Sprintf("File: %s\n%s\n\n", file, analysis))
+	rootContent, err := github.ViewFolder(owner, repo, "", "")
+	if err != nil {
+		return "", fmt.Errorf("error viewing root folder: %v", err)
 	}
 
-	// Analyze the overall structure
-	structure, err := github.ViewFolder(owner, repo, "", "")
-	if err != nil {
-		if err == github.ErrGitHubTokenNotSet {
-			return "", err
-		}
-		log.Printf("Error viewing repository structure: %v", err)
-	} else {
-		structureAnalysis, err := analyzeRepoStructure(structure)
+	tools := []groq.Tool{
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "view_file",
+				Description: "View the contents of a file in the repository",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"path": {Type: "string", Description: "The path of the file to view"},
+					},
+					Required: []string{"path"},
+				},
+			},
+		},
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "view_folder",
+				Description: "View the contents of a folder in the repository",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"path": {Type: "string", Description: "The path of the folder to view"},
+					},
+					Required: []string{"path"},
+				},
+			},
+		},
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "generate_summary",
+				Description: "Generate a summary of the given content",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"content": {Type: "string", Description: "The content to summarize"},
+					},
+					Required: []string{"content"},
+				},
+			},
+		},
+	}
+
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a summary:\n\n%s", rootContent)},
+	}
+
+	for i := 0; i < 5; i++ { // Limit to 5 iterations to prevent infinite loops
+		response, err := groq.ChatCompletionWithTools(messages, tools, nil)
 		if err != nil {
-			log.Printf("Error analyzing repository structure: %v", err)
-		} else {
-			context.WriteString(fmt.Sprintf("Repository Structure:\n%s\n", structureAnalysis))
+			return "", fmt.Errorf("error in ChatCompletionWithTools: %v", err)
 		}
+
+		if len(response.Choices) == 0 || len(response.Choices[0].Message.ToolCalls) == 0 {
+			break
+		}
+
+		for _, toolCall := range response.Choices[0].Message.ToolCalls {
+			result, err := executeToolCall(owner, repo, toolCall)
+			if err != nil {
+				log.Printf("Error executing tool call: %v", err)
+				continue
+			}
+			messages = append(messages, groq.ChatMessage{
+				Role:    "function",
+				Content: result,
+			})
+			context.WriteString(fmt.Sprintf("%s:\n%s\n\n", toolCall.Function.Name, result))
+		}
+
+		messages = append(messages, response.Choices[0].Message)
 	}
 
 	return context.String(), nil
 }
 
-func analyzeFileContent(filename, content string) (string, error) {
-	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a code analyst. Provide a brief summary of the given file content."},
-		{Role: "user", Content: fmt.Sprintf("Analyze the following file (%s) content and provide a brief summary:\n\n%s", filename, content)},
-	}
-
-	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+func executeToolCall(owner, repo string, toolCall groq.ToolCall) (string, error) {
+	var args map[string]string
+	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error unmarshaling tool call arguments: %v", err)
 	}
 
-	if len(response.Choices) > 0 {
-		return response.Choices[0].Message.Content, nil
+	switch toolCall.Function.Name {
+	case "view_file":
+		return github.ViewFile(owner, repo, args["path"], "")
+	case "view_folder":
+		return github.ViewFolder(owner, repo, args["path"], "")
+	case "generate_summary":
+		return generateSummary(args["content"])
+	default:
+		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}
-
-	return "", fmt.Errorf("no analysis generated")
 }
 
-func analyzeRepoStructure(structure string) (string, error) {
+func generateSummary(content string) (string, error) {
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a repository structure analyst. Provide a brief summary of the given repository structure."},
-		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a brief summary:\n\n%s", structure)},
+		{Role: "system", Content: "You are a helpful assistant that summarizes content. Provide concise summaries."},
+		{Role: "user", Content: "Please summarize the following content:\n\n" + content},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
@@ -135,32 +173,14 @@ func analyzeRepoStructure(structure string) (string, error) {
 		return response.Choices[0].Message.Content, nil
 	}
 
-	return "", fmt.Errorf("no analysis generated")
+	return "", fmt.Errorf("no summary generated")
 }
 
 func summarizeContext(context string) string {
-	summary, err := SummarizeContext(context)
+	summary, err := generateSummary(context)
 	if err != nil {
 		log.Printf("Error summarizing context: %v", err)
 		return "Error occurred while summarizing the context"
 	}
 	return summary
-}
-
-func SummarizeContext(context string) (string, error) {
-	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 200 words."},
-		{Role: "user", Content: "Please summarize the following repository context in less than 200 words:\n\n" + context},
-	}
-
-	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if len(response.Choices) > 0 {
-		return response.Choices[0].Message.Content, nil
-	}
-
-	return "", nil
 }
