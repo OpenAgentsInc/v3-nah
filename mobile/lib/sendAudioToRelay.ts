@@ -1,5 +1,6 @@
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
+import { useStore } from "./store"
 
 export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTranscriptionReceived: (transcription: string) => void): Promise<void> {
   return new Promise(async (resolve, reject) => {
@@ -7,6 +8,8 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
       const audioContent = await FileSystem.readAsStringAsync(audioUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
+
+      const { activeRepoUrl } = useStore.getState();
 
       const event = {
         kind: 5252, // NIP-90 range for audio events; we'll use 5252 for speech-to-text
@@ -44,7 +47,7 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
                 ["output", "text/plain"],
                 ["bid", "0"],
                 ["t", "agent_command"],
-                ["param", "repo", "https://github.com/OpenAgentsInc/v3"]
+                ["param", "repo", activeRepoUrl]
               ],
             };
 
