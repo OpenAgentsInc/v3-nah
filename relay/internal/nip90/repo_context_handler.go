@@ -24,6 +24,11 @@ func GetRepoContext(repo string, conn *websocket.Conn, prompt string) string {
 		return "Error: Invalid repository format. Expected 'owner/repo' or a valid GitHub URL."
 	}
 
+	// Check if the prompt is a simple structural question
+	if isSimpleStructuralQuestion(prompt) {
+		return handleSimpleStructuralQuestion(owner, repoName, prompt, conn)
+	}
+
 	context, err := analyzeRepository(owner, repoName, conn, prompt)
 	if err != nil {
 		if err == github.ErrGitHubTokenNotSet {
@@ -34,6 +39,39 @@ func GetRepoContext(repo string, conn *websocket.Conn, prompt string) string {
 	}
 
 	return summarizeContext(context, prompt)
+}
+
+func isSimpleStructuralQuestion(prompt string) bool {
+	lowercasePrompt := strings.ToLower(prompt)
+	return strings.Contains(lowercasePrompt, "what folders") ||
+		strings.Contains(lowercasePrompt, "list folders") ||
+		strings.Contains(lowercasePrompt, "show folders") ||
+		strings.Contains(lowercasePrompt, "what directories") ||
+		strings.Contains(lowercasePrompt, "list directories") ||
+		strings.Contains(lowercasePrompt, "show directories")
+}
+
+func handleSimpleStructuralQuestion(owner, repo, prompt string, conn *websocket.Conn) string {
+	rootContent, err := github.ViewFolder(owner, repo, "", "")
+	if err != nil {
+		return fmt.Sprintf("Error viewing root folder: %v", err)
+	}
+
+	folders := extractFolders(rootContent)
+	response := fmt.Sprintf("The repository contains the following folders:\n\n%s", strings.Join(folders, "\n"))
+
+	return response
+}
+
+func extractFolders(content string) []string {
+	lines := strings.Split(content, "\n")
+	var folders []string
+	for _, line := range lines {
+		if strings.HasSuffix(line, "(dir)") {
+			folders = append(folders, strings.TrimSuffix(line, " (dir)"))
+		}
+	}
+	return folders
 }
 
 func parseRepo(repo string) (string, string) {
@@ -111,8 +149,8 @@ func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) 
 	}
 
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information."},
-		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a summary, focusing on the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
+		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information. Always provide a direct answer to the user's question."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a summary, focusing on answering the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
 	}
 
 	for i := 0; i < 5; i++ { // Limit to 5 iterations to prevent infinite loops
@@ -211,8 +249,8 @@ func generateSummary(content string) (string, error) {
 
 func summarizeContext(context, prompt string) string {
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries focusing on the user's prompt."},
-		{Role: "user", Content: fmt.Sprintf("Please summarize the following repository context, focusing on the user's prompt: '%s'\n\n%s", prompt, context)},
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries focusing on the user's prompt. Always give a direct answer to the user's question."},
+		{Role: "user", Content: fmt.Sprintf("Please summarize the following repository context, focusing on answering the user's prompt: '%s'\n\n%s", prompt, context)},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
