@@ -92,6 +92,7 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
 	if event.Kind == 5252 { // Assuming 5252 is the kind for audio messages
+		log.Printf("Received audio message: %s", event.Content)
 		var audioData AudioData
 		err := json.Unmarshal([]byte(event.Content), &audioData)
 		if err != nil {
