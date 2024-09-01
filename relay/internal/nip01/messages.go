@@ -32,16 +32,13 @@ type AudioData struct {
 }
 
 func ParseMessage(data []byte) (*Message, error) {
-	log.Printf("Received raw message: %s", string(data))
-
 	var arrayMsg []json.RawMessage
 	err := json.Unmarshal(data, &arrayMsg)
 	if err == nil && len(arrayMsg) > 0 {
-		log.Printf("Message is an array with %d elements", len(arrayMsg))
 		var msgType string
 		err = json.Unmarshal(arrayMsg[0], &msgType)
 		if err == nil {
-			log.Printf("Message type: %s", msgType)
+			log.Printf("Received message type: %s", msgType)
 			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
 		}
 	}
@@ -53,7 +50,7 @@ func ParseMessage(data []byte) (*Message, error) {
 		return nil, err
 	}
 
-	log.Printf("Parsed message type: %s", msg.Type)
+	// log.Printf("Parsed message type: %s", msg.Type)
 
 	switch msg.Type {
 	case EventMessage:

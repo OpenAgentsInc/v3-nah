@@ -48,19 +48,14 @@ func (r *Relay) HandleWebSocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
-	log.Printf("Handling message: %s", string(message))
-
 	msg, err := ParseMessage(message)
 	if err != nil {
 		log.Println("Error parsing message:", err)
 		return
 	}
 
-	log.Printf("Parsed message type: %s", msg.Type)
-
 	switch msg.Type {
 	case EventMessage:
-		log.Println("Handling EventMessage")
 		event, ok := msg.Data.(*nostr.Event)
 		if !ok {
 			log.Println("Error: EventMessage data is not of type *nostr.Event")
@@ -68,7 +63,6 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		log.Println("Handling ReqMessage")
 		reqMsg, ok := msg.Data.(*nostr.ReqMessage)
 		if !ok {
 			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
@@ -76,7 +70,6 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleReqMessage(conn, reqMsg)
 	case CloseMessage:
-		log.Println("Handling CloseMessage")
 		subscriptionID, ok := msg.Data.(string)
 		if !ok {
 			log.Println("Error: CloseMessage data is not of type string")
@@ -91,8 +84,7 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
-	if event.Kind == 5252 { // Assuming 5252 is the kind for audio messages
-		log.Printf("Received audio message: %s", event.Content)
+	if event.Kind == 5252 {
 		var audioData AudioData
 		err := json.Unmarshal([]byte(event.Content), &audioData)
 		if err != nil {

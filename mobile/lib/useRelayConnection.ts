@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useStore } from '@/lib/store';
+import { useEffect, useState } from "react"
+import { useStore } from "@/lib/store"
 
 const RELAY_URL = 'ws://localhost:8080'; // Replace with your actual relay URL
 
@@ -27,11 +27,11 @@ export function useRelayConnection() {
       console.error('WebSocket error:', error);
     };
 
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log('Received message:', message);
-      // Handle incoming messages here
-    };
+    // ws.onmessage = (event) => {
+    //   const message = JSON.parse(event.data);
+    //   console.log('Received message:', message);
+    //   // Handle incoming messages here
+    // };
 
     return () => {
       ws.close();
