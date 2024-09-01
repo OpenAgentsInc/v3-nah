@@ -32,7 +32,7 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 			return nil, err
 		}
 
-		log.Printf("Raw event data: %+v", rawEvent) // Add this line to print the raw event data
+		log.Printf("Raw event data: %+v", rawEvent)
 
 		event := &nostr.Event{}
 		if id, ok := rawEvent["id"].(string); ok {
@@ -65,6 +65,14 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 					log.Printf("Error parsing created_at: %v", err)
 				}
 			}
+		} else if createdAtNum, ok := rawEvent["created_at"].(json.Number); ok {
+			if createdAtInt, err := createdAtNum.Int64(); err == nil {
+				event.CreatedAt = time.Unix(createdAtInt, 0)
+			} else {
+				log.Printf("Error parsing created_at as json.Number: %v", err)
+			}
+		} else {
+			log.Printf("created_at field not found or has unexpected type: %T", rawEvent["created_at"])
 		}
 
 		// Handle tags
