@@ -69,7 +69,7 @@ export default function App() {
           console.log("checking:", data.data)
           if (data.data.kind === 6252) {
             setTranscription(data.data.content)
-          } else if (data.data.kind === 5838) {
+          } else if (data.data.kind === 6838) { // Changed from 5838 to 6838
             setAgentResponse(data.data.content)
             setIsProcessing(false)
           }
