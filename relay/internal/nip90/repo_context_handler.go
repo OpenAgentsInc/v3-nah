@@ -15,15 +15,16 @@ import (
 	"github.com/openagentsinc/v3/relay/internal/common"
 )
 
-func GetRepoContext(repo string, conn *websocket.Conn) string {
+func GetRepoContext(repo string, conn *websocket.Conn, prompt string) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
+	log.Printf("User prompt: %s", prompt)
 
 	owner, repoName := parseRepo(repo)
 	if owner == "" || repoName == "" {
 		return "Error: Invalid repository format. Expected 'owner/repo' or a valid GitHub URL."
 	}
 
-	context, err := analyzeRepository(owner, repoName, conn)
+	context, err := analyzeRepository(owner, repoName, conn, prompt)
 	if err != nil {
 		if err == github.ErrGitHubTokenNotSet {
 			return fmt.Sprintf("Error: %v", err)
@@ -32,7 +33,7 @@ func GetRepoContext(repo string, conn *websocket.Conn) string {
 		return fmt.Sprintf("Error analyzing repository: %v", err)
 	}
 
-	return summarizeContext(context)
+	return summarizeContext(context, prompt)
 }
 
 func parseRepo(repo string) (string, string) {
@@ -55,7 +56,7 @@ func parseRepo(repo string) (string, string) {
 	return parts[0], parts[1]
 }
 
-func analyzeRepository(owner, repo string, conn *websocket.Conn) (string, error) {
+func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) (string, error) {
 	var context strings.Builder
 	context.WriteString(fmt.Sprintf("Repository: https://github.com/%s/%s\n\n", owner, repo))
 
@@ -110,8 +111,8 @@ func analyzeRepository(owner, repo string, conn *websocket.Conn) (string, error)
 	}
 
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools."},
-		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a summary:\n\n%s", rootContent)},
+		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a summary, focusing on the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
 	}
 
 	for i := 0; i < 5; i++ { // Limit to 5 iterations to prevent infinite loops
@@ -208,11 +209,21 @@ func generateSummary(content string) (string, error) {
 	return "", fmt.Errorf("no summary generated")
 }
 
-func summarizeContext(context string) string {
-	summary, err := generateSummary(context)
+func summarizeContext(context, prompt string) string {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries focusing on the user's prompt."},
+		{Role: "user", Content: fmt.Sprintf("Please summarize the following repository context, focusing on the user's prompt: '%s'\n\n%s", prompt, context)},
+	}
+
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
 	if err != nil {
 		log.Printf("Error summarizing context: %v", err)
 		return "Error occurred while summarizing the context"
 	}
-	return summary
+
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content
+	}
+
+	return "No summary generated"
 }
