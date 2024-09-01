@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "postinstall": "npx patch-package",
-    "build:ios": "eas build --platform ios"
+    "build:ios": "eas build --platform ios",
+    "submit:ios": "eas submit -p ios --latest"
   },
   "dependencies": {
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
