@@ -33,13 +33,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   transcription: {
-    color: '#fff',
+    color: 'rgba(255, 255, 255, 0.75)', // White with 75% opacity
     fontFamily: 'JetBrainsMono',
     fontSize: 16,
     marginBottom: 10,
   },
   agentResponse: {
-    color: '#0f0',
+    color: '#fff', // Solid white
     fontFamily: 'JetBrainsMono',
     fontSize: 16,
     marginBottom: 20,
