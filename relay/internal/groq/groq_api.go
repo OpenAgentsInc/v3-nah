@@ -1,4 +1,4 @@
-package nip01
+package groq
 
 import (
 	"bytes"
