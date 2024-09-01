@@ -6,6 +6,7 @@
 - App receives 6252, sends NIP-90 kind 5838 event
 
 ## Our custom NIP-90 kinds
-(Request/Response)
-- 5252/6252 - Speech-to-text
-- 5838/6838 - Agent command
+- 5252 - Speech-to-text request
+- 6252 - Speech-to-text response
+- 5838 - Agent command request
+- 5838 - Agent command response
