@@ -63,9 +63,9 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		reqMsg, ok := msg.Data.(*nostr.ReqMessage)
+		reqMsg, ok := msg.Data.([]interface{})
 		if !ok {
-			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
+			log.Println("Error: ReqMessage data is not of type []interface{}")
 			return
 		}
 		r.handleReqMessage(conn, reqMsg)
@@ -98,10 +98,38 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	}
 }
 
-func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg *nostr.ReqMessage) {
-	// TODO: Implement subscription creation and event fetching
-	// For now, just create a subscription
-	sub := r.subscriptionManager.AddSubscription(reqMsg.SubscriptionID, []*nostr.Filter{&reqMsg.Filter})
+func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg []interface{}) {
+	if len(reqMsg) < 2 {
+		log.Println("Invalid REQ message format")
+		return
+	}
+
+	subscriptionID, ok := reqMsg[1].(string)
+	if !ok {
+		log.Println("Invalid subscription ID in REQ message")
+		return
+	}
+
+	filters := make([]*nostr.Filter, 0)
+	for _, filterData := range reqMsg[2:] {
+		filterMap, ok := filterData.(map[string]interface{})
+		if !ok {
+			log.Println("Invalid filter format in REQ message")
+			continue
+		}
+		filter := &nostr.Filter{}
+		// Parse filter data and populate the filter object
+		// This is a simplified version, you may need to add more fields
+		if ids, ok := filterMap["ids"].([]interface{}); ok {
+			filter.IDs = make([]string, len(ids))
+			for i, id := range ids {
+				filter.IDs[i], _ = id.(string)
+			}
+		}
+		filters = append(filters, filter)
+	}
+
+	sub := r.subscriptionManager.AddSubscription(subscriptionID, filters)
 	go r.handleSubscription(conn, sub)
 }
 
@@ -110,10 +138,10 @@ func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) 
 }
 
 func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
-	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Audio))
+	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Data))
 
 	// Transcribe the audio using Groq API
-	transcription, err := TranscribeAudio(audioData.Audio, audioData.Format)
+	transcription, err := TranscribeAudio(audioData.Data, audioData.Format)
 	if err != nil {
 		log.Printf("Error transcribing audio: %v", err)
 		transcription = "Error transcribing audio"
@@ -128,12 +156,7 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	}
 
 	// Send the response back to the client
-	response, err := CreateEventMessage(responseEvent)
-	if err != nil {
-		log.Println("Error creating audio response message:", err)
-		return
-	}
-
+	response := CreateEventMessage(responseEvent)
 	err = conn.WriteJSON(response)
 	if err != nil {
 		log.Println("Error writing audio response to WebSocket:", err)
@@ -142,13 +165,8 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 
 func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
 	for event := range sub.Events {
-		msg, err := CreateEventMessage(event)
-		if err != nil {
-			log.Println("Error creating event message:", err)
-			continue
-		}
-
-		err = conn.WriteJSON(msg)
+		msg := CreateEventMessage(event)
+		err := conn.WriteJSON(msg)
 		if err != nil {
 			log.Println("Error writing event to WebSocket:", err)
 			break
@@ -159,4 +177,11 @@ func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
 func (r *Relay) Start(addr string) error {
 	http.HandleFunc("/", r.HandleWebSocket)
 	return http.ListenAndServe(addr, nil)
+}
+
+// TranscribeAudio is a placeholder function for audio transcription
+// You'll need to implement this function to integrate with the Groq API
+func TranscribeAudio(audioData string, format string) (string, error) {
+	// TODO: Implement audio transcription using Groq API
+	return "Placeholder transcription", nil
 }
