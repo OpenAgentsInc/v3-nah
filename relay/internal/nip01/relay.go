@@ -128,7 +128,7 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 
 	// Create a response event
 	responseEvent := &nostr.Event{
-		Kind:      1235, // Custom event kind for transcription response
+		Kind:      6252, // Updated event kind for transcription response
 		Content:   transcription,
 		CreatedAt: time.Now(),
 		Tags:      [][]string{},
