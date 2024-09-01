@@ -133,7 +133,11 @@ func analyzeRepository(owner, repo string) (string, error) {
 			context.WriteString(fmt.Sprintf("%s:\n%s\n\n", toolCall.Function.Name, result))
 		}
 
-		messages = append(messages, response.Choices[0].Message)
+		// Append the AI's response as a new message
+		messages = append(messages, groq.ChatMessage{
+			Role:    response.Choices[0].Message.Role,
+			Content: response.Choices[0].Message.Content,
+		})
 	}
 
 	return context.String(), nil
