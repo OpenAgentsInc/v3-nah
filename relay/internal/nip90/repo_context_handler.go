@@ -2,13 +2,14 @@ package nip90
 
 import (
 	"log"
+
 	"github.com/openagentsinc/v3/relay/internal/groq"
 	// "database/sql" // Uncomment when implementing SQLite
 )
 
 func GetRepoContext(repo string) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
-	
+
 	// Simulating database retrieval with example data
 	exampleContext := `
 Repository: https://github.com/OpenAgentsInc/v3
@@ -69,8 +70,8 @@ func summarizeContext(context string) string {
 
 func SummarizeContext(context string) (string, error) {
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 150 words."},
-		{Role: "user", Content: "Please summarize the following repository context in less than 150 words:\n\n" + context},
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 50 words."},
+		{Role: "user", Content: "Please summarize the following repository context in less than 50 words:\n\n" + context},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
