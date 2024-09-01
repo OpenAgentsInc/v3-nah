@@ -2,10 +2,8 @@ package nip90
 
 import (
 	"log"
-	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/openagentsinc/v3/relay/internal/common"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 )
 
@@ -17,19 +15,9 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 	LogEventDetails(event)
 
 	// TODO: Implement agent command routing logic here
-	responseEvent := &nostr.Event{
-		Kind:      6838, // Updated event kind for agent command response
-		Content:   "Acknowledged. Will respond shortly.",
-		CreatedAt: time.Now(),
-		Tags:      [][]string{},
-	}
 
 	// Send the response back to the client
-	response := common.CreateEventMessage(responseEvent)
-	err := conn.WriteJSON(response)
-	if err != nil {
-		log.Println("Error writing agent command response to WebSocket:", err)
-	}
+	SendAgentCommandResponse(conn)
 }
 
 func extractCommand(event *nostr.Event) string {
