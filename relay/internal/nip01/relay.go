@@ -178,10 +178,3 @@ func (r *Relay) Start(addr string) error {
 	http.HandleFunc("/", r.HandleWebSocket)
 	return http.ListenAndServe(addr, nil)
 }
-
-// TranscribeAudio is a placeholder function for audio transcription
-// You'll need to implement this function to integrate with the Groq API
-func TranscribeAudio(audioData string, format string) (string, error) {
-	// TODO: Implement audio transcription using Groq API
-	return "Placeholder transcription", nil
-}
