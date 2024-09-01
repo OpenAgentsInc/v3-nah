@@ -10,7 +10,53 @@ import (
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 )
 
-// ... (keep the existing code unchanged)
+type MessageType string
+
+const (
+	EventMessage  MessageType = "EVENT"
+	ReqMessage    MessageType = "REQ"
+	CloseMessage  MessageType = "CLOSE"
+	NoticeMessage MessageType = "NOTICE"
+	EoseMessage   MessageType = "EOSE"
+	OkMessage     MessageType = "OK"
+)
+
+type Message struct {
+	Type MessageType   `json:"type"`
+	Data interface{}   `json:"data"`
+	Raw  []interface{} `json:"-"`
+}
+
+func ParseMessage(data []byte) (*Message, error) {
+	var raw []interface{}
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling message: %v", err)
+	}
+
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("empty message")
+	}
+
+	typeStr, ok := raw[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid message type")
+	}
+
+	msg := &Message{
+		Type: MessageType(typeStr),
+		Raw:  raw,
+	}
+
+	switch msg.Type {
+	case EventMessage, ReqMessage, CloseMessage:
+		return handleObjectMessage(msg)
+	case NoticeMessage, EoseMessage, OkMessage:
+		return handleSimpleMessage(msg)
+	default:
+		return nil, fmt.Errorf("unknown message type: %s", msg.Type)
+	}
+}
 
 func handleObjectMessage(msg *Message) (*Message, error) {
 	log.Printf("Handling object message of type: %s", msg.Type)
@@ -20,7 +66,7 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 	case EventMessage:
 		log.Printf("Handling EventMessage")
 		var rawEvent map[string]interface{}
-		data, err := json.Marshal(msg.Data)
+		data, err := json.Marshal(msg.Raw[1])
 		if err != nil {
 			log.Printf("Error marshaling EventMessage data: %v", err)
 			return nil, err
@@ -92,10 +138,27 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 
 		msg.Data = event
 		log.Printf("Successfully handled EventMessage")
-	// ... (keep the rest of the function unchanged)
+	case ReqMessage:
+		// Handle REQ message
+		if len(msg.Raw) < 2 {
+			return nil, fmt.Errorf("invalid REQ message")
+		}
+		msg.Data = msg.Raw[1:]
+	case CloseMessage:
+		// Handle CLOSE message
+		if len(msg.Raw) < 2 {
+			return nil, fmt.Errorf("invalid CLOSE message")
+		}
+		msg.Data = msg.Raw[1]
 	}
 
 	return msg, nil
 }
 
-// ... (keep the rest of the file unchanged)
+func handleSimpleMessage(msg *Message) (*Message, error) {
+	if len(msg.Raw) < 2 {
+		return nil, fmt.Errorf("invalid %s message", msg.Type)
+	}
+	msg.Data = msg.Raw[1]
+	return msg, nil
+}
