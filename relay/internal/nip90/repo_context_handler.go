@@ -20,6 +20,9 @@ func GetRepoContext(repo string) string {
 
 	context, err := analyzeRepository(owner, repoName)
 	if err != nil {
+		if err == github.ErrGitHubTokenNotSet {
+			return fmt.Sprintf("Error: %v", err)
+		}
 		log.Printf("Error analyzing repository: %v", err)
 		return fmt.Sprintf("Error analyzing repository: %v", err)
 	}
@@ -64,6 +67,9 @@ func analyzeRepository(owner, repo string) (string, error) {
 	for _, file := range files {
 		content, err := github.ViewFile(owner, repo, file, "")
 		if err != nil {
+			if err == github.ErrGitHubTokenNotSet {
+				return "", err
+			}
 			log.Printf("Error viewing file %s: %v", file, err)
 			continue
 		}
@@ -80,6 +86,9 @@ func analyzeRepository(owner, repo string) (string, error) {
 	// Analyze the overall structure
 	structure, err := github.ViewFolder(owner, repo, "", "")
 	if err != nil {
+		if err == github.ErrGitHubTokenNotSet {
+			return "", err
+		}
 		log.Printf("Error viewing repository structure: %v", err)
 	} else {
 		structureAnalysis, err := analyzeRepoStructure(structure)
