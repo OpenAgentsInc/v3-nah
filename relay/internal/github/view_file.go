@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
@@ -16,6 +17,12 @@ const (
 type GitHubFile struct {
 	Content  string `json:"content"`
 	Encoding string `json:"encoding"`
+}
+
+type GitHubItem struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Path string `json:"path"`
 }
 
 func ViewFile(owner, repo, path, branch string) (string, error) {
@@ -68,4 +75,52 @@ func ViewFile(owner, repo, path, branch string) (string, error) {
 	}
 
 	return string(decodedContent), nil
+}
+
+func ViewFolder(owner, repo, path, branch string) (string, error) {
+	url := fmt.Sprintf("%s/repos/%s/%s/contents/%s", githubAPIBaseURL, owner, repo, path)
+	if branch != "" {
+		url += fmt.Sprintf("?ref=%s", branch)
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %v", err)
+	}
+
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return "", fmt.Errorf("GITHUB_TOKEN environment variable is not set")
+	}
+	req.Header.Set("Authorization", "token "+token)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API request failed with status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	var items []GitHubItem
+	err = json.Unmarshal(body, &items)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse JSON response: %v", err)
+	}
+
+	var structure strings.Builder
+	for _, item := range items {
+		structure.WriteString(fmt.Sprintf("%s (%s)\n", item.Path, item.Type))
+	}
+
+	return structure.String(), nil
 }
