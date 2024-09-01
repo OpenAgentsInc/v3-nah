@@ -1,9 +1,7 @@
 package nip90
 
 import (
-	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -16,7 +14,7 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Received agent command request: %s", command)
 
 	// Log all of the fields of the event, one per line
-	logEventDetails(event)
+	LogEventDetails(event)
 
 	// TODO: Implement agent command routing logic here
 	responseEvent := &nostr.Event{
@@ -32,24 +30,6 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 	if err != nil {
 		log.Println("Error writing agent command response to WebSocket:", err)
 	}
-}
-
-func logEventDetails(event *nostr.Event) {
-	var sb strings.Builder
-
-	sb.WriteString("Event Details:\n")
-	sb.WriteString(fmt.Sprintf("  ID: %s\n", event.ID))
-	sb.WriteString(fmt.Sprintf("  PubKey: %s\n", event.PubKey))
-	sb.WriteString(fmt.Sprintf("  CreatedAt: %s\n", event.CreatedAt))
-	sb.WriteString(fmt.Sprintf("  Kind: %d\n", event.Kind))
-	sb.WriteString("  Tags:\n")
-	for _, tag := range event.Tags {
-		sb.WriteString(fmt.Sprintf("    - %v\n", tag))
-	}
-	sb.WriteString(fmt.Sprintf("  Content: %s\n", event.Content))
-	sb.WriteString(fmt.Sprintf("  Sig: %s\n", event.Sig))
-
-	log.Print(sb.String())
 }
 
 func extractCommand(event *nostr.Event) string {
