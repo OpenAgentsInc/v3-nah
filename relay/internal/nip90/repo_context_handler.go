@@ -1,62 +1,117 @@
 package nip90
 
 import (
+	"fmt"
 	"log"
+	"strings"
 
+	"github.com/openagentsinc/v3/relay/internal/github"
 	"github.com/openagentsinc/v3/relay/internal/groq"
-	// "database/sql" // Uncomment when implementing SQLite
 )
 
 func GetRepoContext(repo string) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
 
-	// Simulating database retrieval with example data
-	exampleContext := `
-Repository: https://github.com/OpenAgentsInc/v3
+	owner, repoName := parseRepo(repo)
+	if owner == "" || repoName == "" {
+		return "Error: Invalid repository format. Expected 'owner/repo'."
+	}
 
-Project Overview:
-OpenAgents v3 is the next iteration of the OpenAgents platform, focusing on decentralized AI agents and tools. The project aims to provide a robust framework for creating, managing, and interacting with AI agents using Nostr for communication and Bitcoin for payments.
+	context, err := analyzeRepository(owner, repoName)
+	if err != nil {
+		log.Printf("Error analyzing repository: %v", err)
+		return fmt.Sprintf("Error analyzing repository: %v", err)
+	}
 
-README Highlights:
-- Project structure: mobile (React Native app) and relay (Custom Nostr relay & NIP-90 service provider)
-- Key principles: Decentralization, Bitcoin payments, Nostr authentication, Cross-platform support
-- Technologies: Bitcoin via Lightning, Nostr, React & React Native, Golang
+	return summarizeContext(context)
+}
 
-Tech Stack:
-- Backend: Golang
-- Frontend: React Native (mobile app)
-- Communication: Nostr protocol
-- Payments: Bitcoin Lightning Network
-- API Integration: Groq API for AI model interactions
+func parseRepo(repo string) (string, string) {
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
 
-Major Functions/Files:
-1. relay/internal/nip90/handler.go: Handles NIP-90 events, including audio messages and agent commands
-2. relay/internal/groq/tool_use.go: Integrates with Groq API for AI model interactions
-3. relay/internal/nip90/agent_command_handler.go: Processes agent command requests
-4. relay/internal/nip90/event_logger.go: Logs event details for debugging and monitoring
-5. relay/internal/nip90/response_handler.go: Manages responses to agent commands
+func analyzeRepository(owner, repo string) (string, error) {
+	files := []string{
+		"README.md",
+		"go.mod",
+		"main.go",
+		"relay/internal/nip90/handler.go",
+		"relay/internal/groq/tool_use.go",
+	}
 
-Codebase Observations:
-- The project is well-structured with clear separation of concerns
-- Extensive use of Go interfaces for flexibility and testability
-- Integration with Groq API for AI capabilities
-- Custom implementation of Nostr relay functionality
-- Focus on security and decentralization in the architecture
+	var context strings.Builder
+	context.WriteString(fmt.Sprintf("Repository: https://github.com/%s/%s\n\n", owner, repo))
 
-Next Steps:
-1. Implement SQLite database for caching repository contexts
-2. Develop the repository indexing process in IndexRepository function
-3. Enhance error handling and implement retry mechanisms for API calls
-4. Optimize the context summarization process for large codebases
-5. Implement more sophisticated AI agent interactions using Groq API
-6. Expand the mobile app functionality to interact with the custom Nostr relay
-7. Develop and integrate Bitcoin Lightning Network payment features
-8. Implement comprehensive testing suite for all components
-9. Set up CI/CD pipeline for automated testing and deployment
-10. Create detailed documentation for developers and users
-`
+	for _, file := range files {
+		content, err := github.ViewFile(owner, repo, file, "")
+		if err != nil {
+			log.Printf("Error viewing file %s: %v", file, err)
+			continue
+		}
 
-	return summarizeContext(exampleContext)
+		analysis, err := analyzeFileContent(file, content)
+		if err != nil {
+			log.Printf("Error analyzing file %s: %v", file, err)
+			continue
+		}
+
+		context.WriteString(fmt.Sprintf("File: %s\n%s\n\n", file, analysis))
+	}
+
+	// Analyze the overall structure
+	structure, err := github.ViewFolder(owner, repo, "", "")
+	if err != nil {
+		log.Printf("Error viewing repository structure: %v", err)
+	} else {
+		structureAnalysis, err := analyzeRepoStructure(structure)
+		if err != nil {
+			log.Printf("Error analyzing repository structure: %v", err)
+		} else {
+			context.WriteString(fmt.Sprintf("Repository Structure:\n%s\n", structureAnalysis))
+		}
+	}
+
+	return context.String(), nil
+}
+
+func analyzeFileContent(filename, content string) (string, error) {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a code analyst. Provide a brief summary of the given file content."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following file (%s) content and provide a brief summary:\n\n%s", filename, content)},
+	}
+
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content, nil
+	}
+
+	return "", fmt.Errorf("no analysis generated")
+}
+
+func analyzeRepoStructure(structure string) (string, error) {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a repository structure analyst. Provide a brief summary of the given repository structure."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a brief summary:\n\n%s", structure)},
+	}
+
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content, nil
+	}
+
+	return "", fmt.Errorf("no analysis generated")
 }
 
 func summarizeContext(context string) string {
@@ -70,8 +125,8 @@ func summarizeContext(context string) string {
 
 func SummarizeContext(context string) (string, error) {
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 50 words."},
-		{Role: "user", Content: "Please summarize the following repository context in less than 50 words:\n\n" + context},
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 200 words."},
+		{Role: "user", Content: "Please summarize the following repository context in less than 200 words:\n\n" + context},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
@@ -84,15 +139,4 @@ func SummarizeContext(context string) (string, error) {
 	}
 
 	return "", nil
-}
-
-// Keeping this function for future use
-func IndexRepository(repo string) (string, error) {
-	// TODO: Implement repository indexing logic
-	// This function should clone the repository, analyze its contents,
-	// and generate a context string that describes the repository structure,
-	// key files, and other relevant information.
-
-	// Placeholder implementation
-	return "Repository: " + repo + "\nContents: [Placeholder for indexed content]", nil
 }
