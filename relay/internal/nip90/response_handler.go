@@ -9,10 +9,10 @@ import (
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 )
 
-func SendAgentCommandResponse(conn *websocket.Conn) {
+func SendAgentCommandResponse(conn *websocket.Conn, context string) {
 	responseEvent := &nostr.Event{
 		Kind:      6838, // Event kind for agent command response
-		Content:   "Acknowledged. Will respond shortly.",
+		Content:   context,
 		CreatedAt: time.Now(),
 		Tags:      [][]string{},
 	}
