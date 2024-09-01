@@ -8,18 +8,17 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      const message = JSON.stringify({
-        type: 'EVENT',
-        data: {
-          kind: 5252, // NIP-90 range for audio events; we'll use 5252 for speech-to-text
-          content: JSON.stringify({
-            audio: audioContent,
-            format: 'm4a',
-          }),
-          created_at: Math.floor(Date.now() / 1000),
-          tags: [],
-        },
-      });
+      const event = {
+        kind: 5252, // NIP-90 range for audio events; we'll use 5252 for speech-to-text
+        content: JSON.stringify({
+          audio: audioContent,
+          format: 'm4a',
+        }),
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+      };
+
+      const message = JSON.stringify(["EVENT", event]);
 
       socket.send(message);
 
@@ -27,22 +26,21 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
       const listener = (event: MessageEvent) => {
         const data = JSON.parse(event.data);
         console.log("Received data:", data);
-        if (data.type === 'EVENT' && data.data.kind === 6252) {
-          const transcription = data.data.content;
+        if (Array.isArray(data) && data[0] === 'EVENT' && data[1].kind === 6252) {
+          const transcription = data[1].content;
           onTranscriptionReceived(transcription);
 
           // Send the 5838 event (agent command request)
-          const agentCommandMessage = JSON.stringify({
-            type: 'EVENT',
-            data: {
-              kind: 5838, // NIP-90 kind for agent command request
-              content: JSON.stringify({
-                command: transcription,
-              }),
-              created_at: Math.floor(Date.now() / 1000),
-              tags: [],
-            },
-          });
+          const agentCommandEvent = {
+            kind: 5838, // NIP-90 kind for agent command request
+            content: JSON.stringify({
+              command: transcription,
+            }),
+            created_at: Math.floor(Date.now() / 1000),
+            tags: [],
+          };
+
+          const agentCommandMessage = JSON.stringify(["EVENT", agentCommandEvent]);
 
           socket.send(agentCommandMessage);
 
