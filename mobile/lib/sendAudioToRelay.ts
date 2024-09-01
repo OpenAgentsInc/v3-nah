@@ -26,8 +26,8 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
       const listener = (event: MessageEvent) => {
         const data = JSON.parse(event.data);
         console.log("Received data:", data);
-        if (Array.isArray(data) && data[0] === 'EVENT' && data[1].kind === 6252) {
-          const transcription = data[1].content;
+        if (data.type === 'EVENT' && data.data.kind === 6252) {
+          const transcription = data.data.content;
           onTranscriptionReceived(transcription);
 
           // Send the 5838 event (agent command request)
