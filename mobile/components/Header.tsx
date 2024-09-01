@@ -31,10 +31,10 @@ const Header: React.FC<HeaderProps> = ({ isConnected }) => {
 
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={handleOpenMenu}>
+      <TouchableOpacity onPress={handleOpenMenu} activeOpacity={0.8}>
         <Image source={require('../assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.repoUrlContainer} onPress={handleOpenMenu}>
+      <TouchableOpacity style={styles.repoUrlContainer} onPress={handleOpenMenu} activeOpacity={0.8}>
         <Text style={styles.repoUrlText} numberOfLines={1} ellipsizeMode="middle">
           {displayRepoUrl}
         </Text>
