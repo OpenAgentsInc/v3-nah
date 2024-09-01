@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "oa-mobile",
-    "slug": "oa-mobile",
+    "name": "OpenAgents",
+    "slug": "v3",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,6 +26,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3da884d4-4ac0-43f3-8f2c-2b988a003e94"
+      }
+    },
+    "owner": "openagents"
   }
 }
