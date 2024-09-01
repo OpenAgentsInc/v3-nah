@@ -15,15 +15,20 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 	repo := extractRepoParam(event)
 	if repo == "" {
 		log.Println("Error: No repo parameter found in the event tags")
+		SendAgentCommandResponse(conn, "Error: No repo parameter found")
 		return
 	}
 
 	log.Printf("Received agent command request for repo: %s", repo)
 
+	// Get repository context
+	context := GetRepoContext(repo)
+	log.Printf("Repository context: %s", context)
+
 	// TODO: Implement agent command routing logic here
 
 	// Send the response back to the client
-	SendAgentCommandResponse(conn)
+	SendAgentCommandResponse(conn, context)
 }
 
 func extractRepoParam(event *nostr.Event) string {
