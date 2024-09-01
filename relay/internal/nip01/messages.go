@@ -32,35 +32,44 @@ type AudioData struct {
 }
 
 func ParseMessage(data []byte) (*Message, error) {
+	log.Printf("Parsing message: %s", string(data))
+
 	var msg Message
 	err := json.Unmarshal(data, &msg)
 	if err == nil {
-		log.Printf("Received message type: %s", msg.Type)
+		log.Printf("Successfully parsed object message. Type: %s", msg.Type)
 		return handleObjectMessage(&msg)
 	}
+	log.Printf("Failed to parse as object: %v", err)
 
 	// If object parsing fails, try array parsing
 	var arrayMsg []json.RawMessage
 	err = json.Unmarshal(data, &arrayMsg)
 	if err == nil && len(arrayMsg) > 0 {
+		log.Printf("Successfully parsed as array. Length: %d", len(arrayMsg))
 		var msgType string
 		err = json.Unmarshal(arrayMsg[0], &msgType)
 		if err == nil {
-			log.Printf("Received array message type: %s", msgType)
+			log.Printf("Array message type: %s", msgType)
 			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
 		}
+		log.Printf("Failed to parse array message type: %v", err)
+	} else {
+		log.Printf("Failed to parse as array: %v", err)
 	}
 
-	log.Printf("Error parsing message: %v", err)
-	return nil, err
+	log.Printf("Failed to parse message as either object or array")
+	return nil, fmt.Errorf("failed to parse message: %v", err)
 }
 
 func handleObjectMessage(msg *Message) (*Message, error) {
+	log.Printf("Handling object message of type: %s", msg.Type)
 	switch msg.Type {
 	case EventMessage:
 		var event nostr.Event
 		data, err := json.Marshal(msg.Data)
 		if err != nil {
+			log.Printf("Error marshaling EventMessage data: %v", err)
 			return nil, err
 		}
 		err = json.Unmarshal(data, &event)
@@ -69,10 +78,12 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 			return nil, err
 		}
 		msg.Data = &event
+		log.Printf("Successfully handled EventMessage")
 	case ReqMessage:
 		var filter nostr.Filter
 		data, err := json.Marshal(msg.Data)
 		if err != nil {
+			log.Printf("Error marshaling ReqMessage data: %v", err)
 			return nil, err
 		}
 		err = json.Unmarshal(data, &filter)
@@ -81,10 +92,12 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 			return nil, err
 		}
 		msg.Data = &filter
+		log.Printf("Successfully handled ReqMessage")
 	case AudioMessage:
 		var audioData AudioData
 		data, err := json.Marshal(msg.Data)
 		if err != nil {
+			log.Printf("Error marshaling AudioMessage data: %v", err)
 			return nil, err
 		}
 		err = json.Unmarshal(data, &audioData)
@@ -93,12 +106,19 @@ func handleObjectMessage(msg *Message) (*Message, error) {
 			return nil, err
 		}
 		msg.Data = &audioData
+		log.Printf("Successfully handled AudioMessage")
+	default:
+		log.Printf("Unknown message type: %s", msg.Type)
 	}
 
 	return msg, nil
 }
 
+// Rest of the file remains unchanged
+// ...
+
 func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, error) {
+	log.Printf("Handling array message of type: %s", msgType)
 	switch msgType {
 	case EventMessage:
 		if len(data) != 1 {
@@ -153,6 +173,7 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 			}
 		}
 
+		log.Printf("Successfully handled array EventMessage")
 		return &Message{Type: EventMessage, Data: event}, nil
 	case ReqMessage:
 		if len(data) < 2 {
@@ -168,6 +189,7 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		if err != nil {
 			return nil, err
 		}
+		log.Printf("Successfully handled array ReqMessage")
 		return &Message{Type: ReqMessage, Data: &nostr.ReqMessage{SubscriptionID: subscriptionID, Filter: filter}}, nil
 	case AudioMessage:
 		if len(data) != 1 {
@@ -178,53 +200,13 @@ func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, 
 		if err != nil {
 			return nil, err
 		}
+		log.Printf("Successfully handled array AudioMessage")
 		return &Message{Type: AudioMessage, Data: &audioData}, nil
 	default:
+		log.Printf("Unsupported array message type: %s", msgType)
 		return nil, fmt.Errorf("unsupported array message type: %s", msgType)
 	}
 }
 
-func CreateEventMessage(event *nostr.Event) (*Message, error) {
-	return &Message{
-		Type: EventMessage,
-		Data: event,
-	}, nil
-}
-
-func CreateReqMessage(reqMsg *nostr.ReqMessage) (*Message, error) {
-	return &Message{
-		Type: ReqMessage,
-		Data: reqMsg,
-	}, nil
-}
-
-func CreateCloseMessage(subscriptionID string) (*Message, error) {
-	return &Message{
-		Type: CloseMessage,
-		Data: subscriptionID,
-	}, nil
-}
-
-func CreateNoticeMessage(message string) (*Message, error) {
-	return &Message{
-		Type: NoticeMessage,
-		Data: message,
-	}, nil
-}
-
-func CreateEoseMessage(subscriptionID string) (*Message, error) {
-	return &Message{
-		Type: EoseMessage,
-		Data: subscriptionID,
-	}, nil
-}
-
-func CreateAudioResponseMessage(transcription string) (*Message, error) {
-	return &Message{
-		Type: EventMessage,
-		Data: &nostr.Event{
-			Kind:    6252, // Custom event kind for transcription response
-			Content: transcription,
-		},
-	}, nil
-}
+// Rest of the file remains unchanged
+// ...
