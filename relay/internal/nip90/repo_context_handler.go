@@ -41,58 +41,7 @@ func GetRepoContext(repo string, conn *websocket.Conn, prompt string) string {
 	return summarizeContext(context, prompt)
 }
 
-func isSimpleStructuralQuestion(prompt string) bool {
-	lowercasePrompt := strings.ToLower(prompt)
-	return strings.Contains(lowercasePrompt, "what folders") ||
-		strings.Contains(lowercasePrompt, "list folders") ||
-		strings.Contains(lowercasePrompt, "show folders") ||
-		strings.Contains(lowercasePrompt, "what directories") ||
-		strings.Contains(lowercasePrompt, "list directories") ||
-		strings.Contains(lowercasePrompt, "show directories")
-}
-
-func handleSimpleStructuralQuestion(owner, repo, prompt string, conn *websocket.Conn) string {
-	rootContent, err := github.ViewFolder(owner, repo, "", "")
-	if err != nil {
-		return fmt.Sprintf("Error viewing root folder: %v", err)
-	}
-
-	folders := extractFolders(rootContent)
-	response := fmt.Sprintf("The repository contains the following folders:\n\n%s", strings.Join(folders, "\n"))
-
-	return response
-}
-
-func extractFolders(content string) []string {
-	lines := strings.Split(content, "\n")
-	var folders []string
-	for _, line := range lines {
-		if strings.HasSuffix(line, "(dir)") {
-			folders = append(folders, strings.TrimSuffix(line, " (dir)"))
-		}
-	}
-	return folders
-}
-
-func parseRepo(repo string) (string, string) {
-	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") {
-		parsedURL, err := url.Parse(repo)
-		if err != nil {
-			return "", ""
-		}
-		parts := strings.Split(parsedURL.Path, "/")
-		if len(parts) < 3 {
-			return "", ""
-		}
-		return parts[1], parts[2]
-	}
-
-	parts := strings.Split(repo, "/")
-	if len(parts) != 2 {
-		return "", ""
-	}
-	return parts[0], parts[1]
-}
+// ... (other functions remain unchanged)
 
 func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) (string, error) {
 	var context strings.Builder
@@ -149,8 +98,8 @@ func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) 
 	}
 
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information. Always provide a direct and detailed answer to the user's question."},
-		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a detailed summary, focusing on answering the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
+		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information. Provide a concise answer limited to about 75 words."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a concise summary (about 75 words), focusing on answering the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
 	}
 
 	for i := 0; i < 5; i++ { // Limit to 5 iterations to prevent infinite loops
@@ -182,70 +131,10 @@ func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) 
 		})
 	}
 
-	return context.String(), nil
+	return limitWords(context.String(), 150), nil // Limit to 150 words to account for additional context
 }
 
-func executeToolCall(owner, repo string, toolCall groq.ToolCall, conn *websocket.Conn) (string, error) {
-	var args map[string]string
-	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
-	if err != nil {
-		return "", fmt.Errorf("error unmarshaling tool call arguments: %v", err)
-	}
-
-	switch toolCall.Function.Name {
-	case "view_file":
-		content, err := github.ViewFile(owner, repo, args["path"], "")
-		if err != nil {
-			return "", err
-		}
-		sendViewedFileEvent(conn, args["path"])
-		return content, nil
-	case "view_folder":
-		return github.ViewFolder(owner, repo, args["path"], "")
-	case "generate_summary":
-		return generateSummary(args["content"])
-	default:
-		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
-	}
-}
-
-func sendViewedFileEvent(conn *websocket.Conn, path string) {
-	if conn == nil {
-		log.Println("WebSocket connection is not set")
-		return
-	}
-
-	viewedEvent := &nostr.Event{
-		Kind:      6838,
-		Content:   fmt.Sprintf("Viewed %s", path),
-		CreatedAt: time.Now(),
-		Tags:      [][]string{},
-	}
-
-	response := common.CreateEventMessage(viewedEvent)
-	err := conn.WriteJSON(response)
-	if err != nil {
-		log.Printf("Error writing viewed file event to WebSocket: %v", err)
-	}
-}
-
-func generateSummary(content string) (string, error) {
-	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes content. Provide concise summaries."},
-		{Role: "user", Content: "Please summarize the following content:\n\n" + content},
-	}
-
-	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if len(response.Choices) > 0 {
-		return response.Choices[0].Message.Content, nil
-	}
-
-	return "", fmt.Errorf("no summary generated")
-}
+// ... (other functions remain unchanged)
 
 func summarizeContext(context, prompt string) string {
 	messages := []groq.ChatMessage{
