@@ -15,13 +15,7 @@ import (
 	"github.com/openagentsinc/v3/relay/internal/common"
 )
 
-var conn *websocket.Conn
-
-func SetWebSocketConnection(c *websocket.Conn) {
-	conn = c
-}
-
-func GetRepoContext(repo string) string {
+func GetRepoContext(repo string, conn *websocket.Conn) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
 
 	owner, repoName := parseRepo(repo)
@@ -29,7 +23,7 @@ func GetRepoContext(repo string) string {
 		return "Error: Invalid repository format. Expected 'owner/repo' or a valid GitHub URL."
 	}
 
-	context, err := analyzeRepository(owner, repoName)
+	context, err := analyzeRepository(owner, repoName, conn)
 	if err != nil {
 		if err == github.ErrGitHubTokenNotSet {
 			return fmt.Sprintf("Error: %v", err)
@@ -61,7 +55,7 @@ func parseRepo(repo string) (string, string) {
 	return parts[0], parts[1]
 }
 
-func analyzeRepository(owner, repo string) (string, error) {
+func analyzeRepository(owner, repo string, conn *websocket.Conn) (string, error) {
 	var context strings.Builder
 	context.WriteString(fmt.Sprintf("Repository: https://github.com/%s/%s\n\n", owner, repo))
 
@@ -131,7 +125,7 @@ func analyzeRepository(owner, repo string) (string, error) {
 		}
 
 		for _, toolCall := range response.Choices[0].Message.ToolCalls {
-			result, err := executeToolCall(owner, repo, toolCall)
+			result, err := executeToolCall(owner, repo, toolCall, conn)
 			if err != nil {
 				log.Printf("Error executing tool call: %v", err)
 				continue
@@ -143,7 +137,6 @@ func analyzeRepository(owner, repo string) (string, error) {
 			context.WriteString(fmt.Sprintf("%s:\n%s\n\n", toolCall.Function.Name, result))
 		}
 
-		// Append the AI's response as a new message
 		messages = append(messages, groq.ChatMessage{
 			Role:    response.Choices[0].Message.Role,
 			Content: response.Choices[0].Message.Content,
@@ -153,7 +146,7 @@ func analyzeRepository(owner, repo string) (string, error) {
 	return context.String(), nil
 }
 
-func executeToolCall(owner, repo string, toolCall groq.ToolCall) (string, error) {
+func executeToolCall(owner, repo string, toolCall groq.ToolCall, conn *websocket.Conn) (string, error) {
 	var args map[string]string
 	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 	if err != nil {
@@ -166,7 +159,7 @@ func executeToolCall(owner, repo string, toolCall groq.ToolCall) (string, error)
 		if err != nil {
 			return "", err
 		}
-		sendViewedFileEvent(args["path"])
+		sendViewedFileEvent(conn, args["path"])
 		return content, nil
 	case "view_folder":
 		return github.ViewFolder(owner, repo, args["path"], "")
@@ -177,7 +170,7 @@ func executeToolCall(owner, repo string, toolCall groq.ToolCall) (string, error)
 	}
 }
 
-func sendViewedFileEvent(path string) {
+func sendViewedFileEvent(conn *websocket.Conn, path string) {
 	if conn == nil {
 		log.Println("WebSocket connection is not set")
 		return
