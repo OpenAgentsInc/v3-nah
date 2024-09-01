@@ -149,7 +149,3 @@ func (r *Relay) Start(addr string) error {
 	http.HandleFunc("/", r.HandleWebSocket)
 	return http.ListenAndServe(addr, nil)
 }
-
-func CreateEventMessage(event *nostr.Event) []interface{} {
-	return []interface{}{"EVENT", event}
-}
