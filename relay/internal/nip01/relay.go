@@ -183,7 +183,7 @@ func (r *Relay) handleAgentCommandRequest(conn *websocket.Conn, event *nostr.Eve
 
 	responseEvent := &nostr.Event{
 		Kind:      6838, // Updated event kind for agent command response
-		Content:   "Agent response: " + event.Content,
+		Content:   "Acknowledged. Will respond shortly.",
 		CreatedAt: time.Now(),
 		Tags:      [][]string{},
 	}
