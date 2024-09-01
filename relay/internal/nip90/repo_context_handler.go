@@ -6,10 +6,20 @@ import (
 	"log"
 	"strings"
 	"net/url"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/github"
 	"github.com/openagentsinc/v3/relay/internal/groq"
+	"github.com/openagentsinc/v3/relay/internal/nostr"
+	"github.com/openagentsinc/v3/relay/internal/common"
 )
+
+var conn *websocket.Conn
+
+func SetWebSocketConnection(c *websocket.Conn) {
+	conn = c
+}
 
 func GetRepoContext(repo string) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
@@ -152,13 +162,38 @@ func executeToolCall(owner, repo string, toolCall groq.ToolCall) (string, error)
 
 	switch toolCall.Function.Name {
 	case "view_file":
-		return github.ViewFile(owner, repo, args["path"], "")
+		content, err := github.ViewFile(owner, repo, args["path"], "")
+		if err != nil {
+			return "", err
+		}
+		sendViewedFileEvent(args["path"])
+		return content, nil
 	case "view_folder":
 		return github.ViewFolder(owner, repo, args["path"], "")
 	case "generate_summary":
 		return generateSummary(args["content"])
 	default:
 		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
+	}
+}
+
+func sendViewedFileEvent(path string) {
+	if conn == nil {
+		log.Println("WebSocket connection is not set")
+		return
+	}
+
+	viewedEvent := &nostr.Event{
+		Kind:      6838,
+		Content:   fmt.Sprintf("Viewed %s", path),
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	response := common.CreateEventMessage(viewedEvent)
+	err := conn.WriteJSON(response)
+	if err != nil {
+		log.Printf("Error writing viewed file event to WebSocket: %v", err)
 	}
 }
 
