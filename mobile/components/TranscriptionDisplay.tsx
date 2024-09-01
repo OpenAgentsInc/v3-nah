@@ -15,7 +15,7 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({ messages })
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.transcriptionContainer}>
       {messages.map((message, index) => (
         <Text key={index} style={message.type === 'transcription' ? styles.transcription : styles.agentResponse}>
-          {message.content}
+          {message.content.trim()}
         </Text>
       ))}
     </ScrollView>
