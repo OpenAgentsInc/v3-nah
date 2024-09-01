@@ -79,7 +79,8 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
-	if event.Kind == 5252 {
+	switch event.Kind {
+	case 5252:
 		var audioData struct {
 			Audio  string `json:"audio"`
 			Format string `json:"format"`
@@ -93,7 +94,9 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 			Data:   audioData.Audio,
 			Format: audioData.Format,
 		})
-	} else {
+	case 5838:
+		r.handleAgentCommandRequest(conn, event)
+	default:
 		// Handle other event types or broadcast to subscribers
 		r.subscriptionManager.BroadcastEvent(event)
 	}
@@ -169,6 +172,27 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	err = conn.WriteJSON(response)
 	if err != nil {
 		log.Println("Error writing audio response to WebSocket:", err)
+	}
+}
+
+func (r *Relay) handleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
+	log.Printf("Received agent command request: %s", event.Content)
+
+	// TODO: Implement agent command routing logic here
+	// For now, we'll just echo the command back as a response
+
+	responseEvent := &nostr.Event{
+		Kind:      6838, // Updated event kind for agent command response
+		Content:   "Agent response: " + event.Content,
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	// Send the response back to the client
+	response := CreateEventMessage(responseEvent)
+	err := conn.WriteJSON(response)
+	if err != nil {
+		log.Println("Error writing agent command response to WebSocket:", err)
 	}
 }
 
