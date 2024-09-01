@@ -80,13 +80,19 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
 	if event.Kind == 5252 {
-		var audioData AudioData
+		var audioData struct {
+			Audio  string `json:"audio"`
+			Format string `json:"format"`
+		}
 		err := json.Unmarshal([]byte(event.Content), &audioData)
 		if err != nil {
 			log.Printf("Error unmarshaling audio data: %v", err)
 			return
 		}
-		r.handleAudioMessage(conn, &audioData)
+		r.handleAudioMessage(conn, &AudioData{
+			Data:   audioData.Audio,
+			Format: audioData.Format,
+		})
 	} else {
 		// Handle other event types or broadcast to subscribers
 		r.subscriptionManager.BroadcastEvent(event)
