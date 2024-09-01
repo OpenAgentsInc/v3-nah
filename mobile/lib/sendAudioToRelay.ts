@@ -10,12 +10,14 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
 
       const event = {
         kind: 5252, // NIP-90 range for audio events; we'll use 5252 for speech-to-text
-        content: JSON.stringify({
-          audio: audioContent,
-          format: 'm4a',
-        }),
+        content: "",
         created_at: Math.floor(Date.now() / 1000),
-        tags: [],
+        tags: [
+          ["i", audioContent, "text"],
+          ["param", "format", "m4a"],
+          ["output", "text/plain"],
+          ["bid", "0"]
+        ],
       };
 
       const message = JSON.stringify(["EVENT", event]);
@@ -35,11 +37,14 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
             // Send the 5838 event (agent command request)
             const agentCommandEvent = {
               kind: 5838, // NIP-90 kind for agent command request
-              content: JSON.stringify({
-                command: transcription,
-              }),
+              content: "",
               created_at: Math.floor(Date.now() / 1000),
-              tags: [],
+              tags: [
+                ["i", transcription, "text"],
+                ["output", "text/plain"],
+                ["bid", "0"],
+                ["t", "agent_command"]
+              ],
             };
 
             const agentCommandMessage = JSON.stringify(["EVENT", agentCommandEvent]);
