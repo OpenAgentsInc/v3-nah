@@ -64,13 +64,14 @@ export default function App() {
     if (socket) {
       const messageHandler = (event: MessageEvent) => {
         const data = JSON.parse(event.data)
-        console.log("event.data:", data)
-        if (data.type === 'EVENT') {
-          console.log("checking:", data.data)
-          if (data.data.kind === 6252) {
-            setTranscription(data.data.content)
-          } else if (data.data.kind === 6838) { // Changed from 5838 to 6838
-            setAgentResponse(data.data.content)
+        console.log("Received data:", data)
+        if (Array.isArray(data) && data[0] === "EVENT") {
+          const eventData = data[1]
+          console.log("Event data:", eventData)
+          if (eventData.kind === 6252) {
+            setTranscription(eventData.content)
+          } else if (eventData.kind === 6838) {
+            setAgentResponse(eventData.content)
             setIsProcessing(false)
           }
         }
