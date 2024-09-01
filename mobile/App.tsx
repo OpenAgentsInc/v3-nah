@@ -33,7 +33,6 @@ export default function App() {
 
   useMessageHandler({
     socket,
-    setTranscription: (transcription) => addMessage('transcription', transcription),
     setAgentResponse: (response) => addMessage('agentResponse', response),
     setIsProcessing
   })
