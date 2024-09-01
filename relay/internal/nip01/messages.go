@@ -27,6 +27,11 @@ type Message struct {
 	Raw  []interface{} `json:"-"`
 }
 
+type AudioData struct {
+	Data   string `json:"data"`
+	Format string `json:"format"`
+}
+
 func ParseMessage(data []byte) (*Message, error) {
 	var raw []interface{}
 	err := json.Unmarshal(data, &raw)
@@ -161,4 +166,12 @@ func handleSimpleMessage(msg *Message) (*Message, error) {
 	}
 	msg.Data = msg.Raw[1]
 	return msg, nil
+}
+
+func CreateEventMessage(event *nostr.Event) *Message {
+	return &Message{
+		Type: EventMessage,
+		Data: event,
+		Raw:  []interface{}{"EVENT", event},
+	}
 }
