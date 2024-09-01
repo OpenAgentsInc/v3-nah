@@ -14,24 +14,35 @@ import { useAudioPermission } from "./lib/useAudioPermission"
 import { useMessageHandler } from "./lib/useMessageHandler"
 import { appStyles } from "./styles/appStyles"
 
+interface Message {
+  type: 'transcription' | 'agentResponse';
+  content: string;
+}
+
 export default function App() {
   useNostrUser()
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
-  const [transcription, setTranscription] = useState<string | null>(null)
-  const [agentResponse, setAgentResponse] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const permissionStatus = useAudioPermission()
 
-  useMessageHandler({ socket, setTranscription, setAgentResponse, setIsProcessing })
+  const addMessage = useCallback((type: 'transcription' | 'agentResponse', content: string) => {
+    setMessages(prevMessages => [...prevMessages, { type, content }])
+  }, [])
+
+  useMessageHandler({
+    socket,
+    setTranscription: (transcription) => addMessage('transcription', transcription),
+    setAgentResponse: (response) => addMessage('agentResponse', response),
+    setIsProcessing
+  })
 
   const handlePressIn = useCallback(async () => {
     if (permissionStatus !== 'granted') {
       console.log('Audio permission not granted')
       return
     }
-    setTranscription(null)
-    setAgentResponse(null)
     await startRecording()
   }, [permissionStatus, startRecording])
 
@@ -47,25 +58,22 @@ export default function App() {
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
         await sendAudioToRelay(audioUri, socket, (receivedTranscription) => {
-          setTranscription(receivedTranscription)
+          addMessage('transcription', receivedTranscription)
         })
       }
     } catch (error) {
       console.error('Error sending audio:', error)
-      setTranscription('Error sending audio')
+      addMessage('transcription', 'Error sending audio')
       setIsProcessing(false)
     }
-  }, [socket, stopRecording])
+  }, [socket, stopRecording, addMessage])
 
   return (
     <SafeAreaView style={appStyles.safeArea}>
       <View style={appStyles.container}>
         <Header isConnected={isConnected} />
         <View style={appStyles.content}>
-          <TranscriptionDisplay
-            transcription={transcription}
-            agentResponse={agentResponse}
-          />
+          <TranscriptionDisplay messages={messages} />
         </View>
         <PushToTalkButton
           onPressIn={handlePressIn}
