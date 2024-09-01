@@ -12,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({ isConnected }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { activeRepoUrl } = useStore();
 
-  const handleLogoPress = () => {
+  const handleOpenMenu = () => {
     setIsMenuVisible(true);
   };
 
@@ -31,14 +31,14 @@ const Header: React.FC<HeaderProps> = ({ isConnected }) => {
 
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={handleLogoPress}>
+      <TouchableOpacity onPress={handleOpenMenu}>
         <Image source={require('../assets/sqlogo-t.png')} style={styles.logo} resizeMode="contain" />
       </TouchableOpacity>
-      <View style={styles.repoUrlContainer}>
+      <TouchableOpacity style={styles.repoUrlContainer} onPress={handleOpenMenu}>
         <Text style={styles.repoUrlText} numberOfLines={1} ellipsizeMode="middle">
           {displayRepoUrl}
         </Text>
-      </View>
+      </TouchableOpacity>
       <RelayStatusIcon isConnected={isConnected} />
       <RepoMenu isVisible={isMenuVisible} onClose={handleCloseMenu} />
     </View>
@@ -50,9 +50,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 0,
+    paddingTop: 4,
+    paddingBottom: 4,
     paddingHorizontal: 20,
-    height: 50,
+    height: 54,
     backgroundColor: '#000',
     borderBottomColor: 'rgba(255, 255, 255, 0.5)',
     borderBottomWidth: 1,
@@ -64,6 +65,7 @@ const styles = StyleSheet.create({
   repoUrlContainer: {
     flex: 1,
     marginHorizontal: 10,
+    justifyContent: 'center',
   },
   repoUrlText: {
     color: 'rgba(255, 255, 255, 0.5)',
