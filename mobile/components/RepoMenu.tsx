@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Modal } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Modal, Text } from 'react-native';
 import { useStore } from '../lib/store';
 
 interface RepoMenuProps {
@@ -18,22 +18,28 @@ const RepoMenu: React.FC<RepoMenuProps> = ({ isVisible, onClose }) => {
 
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={isVisible}
       onRequestClose={onClose}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
+          <Text style={styles.title}>Repository URL</Text>
           <TextInput
             style={styles.input}
             onChangeText={setNewRepoUrl}
             value={newRepoUrl}
             placeholder="Enter repository URL"
+            placeholderTextColor="#888"
           />
           <View style={styles.buttonContainer}>
-            <Button title="Save" onPress={handleSave} />
-            <Button title="Cancel" onPress={onClose} />
+            <TouchableOpacity style={styles.button} onPress={handleSave}>
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={onClose}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -49,11 +55,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalView: {
-    backgroundColor: 'white',
+    backgroundColor: '#000',
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#fff',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -61,19 +67,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    borderColor: '#fff',
+    borderWidth: 1,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#fff',
+    fontFamily: 'JetBrainsMono',
   },
   input: {
     height: 40,
     width: 250,
-    borderColor: 'gray',
+    borderColor: '#fff',
     borderWidth: 1,
     marginBottom: 20,
     paddingHorizontal: 10,
+    color: '#fff',
+    fontFamily: 'JetBrainsMono',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+  },
+  button: {
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 5,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontFamily: 'JetBrainsMono',
   },
 });
 
