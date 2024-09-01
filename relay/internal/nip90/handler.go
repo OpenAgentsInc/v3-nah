@@ -1,7 +1,6 @@
 package nip90
 
 import (
-	"encoding/json"
 	"log"
 	"time"
 
@@ -16,7 +15,8 @@ type AudioData struct {
 	Format string
 }
 
-func HandleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
+func HandleAudioMessage(conn *websocket.Conn, event *nostr.Event) {
+	audioData := extractAudioData(event)
 	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Data))
 
 	// Transcribe the audio using Groq API
@@ -43,7 +43,8 @@ func HandleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 }
 
 func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
-	log.Printf("Received agent command request: %s", event.Content)
+	command := extractCommand(event)
+	log.Printf("Received agent command request: %s", command)
 
 	// TODO: Implement agent command routing logic here
 	// For now, we'll just echo the command back as a response
@@ -66,22 +67,36 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 func HandleNIP90Event(conn *websocket.Conn, event *nostr.Event) {
 	switch event.Kind {
 	case 5252:
-		var audioData struct {
-			Audio  string `json:"audio"`
-			Format string `json:"format"`
-		}
-		err := json.Unmarshal([]byte(event.Content), &audioData)
-		if err != nil {
-			log.Printf("Error unmarshaling audio data: %v", err)
-			return
-		}
-		HandleAudioMessage(conn, &AudioData{
-			Data:   audioData.Audio,
-			Format: audioData.Format,
-		})
+		HandleAudioMessage(conn, event)
 	case 5838:
 		HandleAgentCommandRequest(conn, event)
 	default:
 		log.Printf("Unhandled NIP-90 event kind: %d", event.Kind)
 	}
+}
+
+func extractAudioData(event *nostr.Event) *AudioData {
+	var audioData AudioData
+	for _, tag := range event.Tags {
+		if len(tag) >= 2 {
+			switch tag[0] {
+			case "i":
+				audioData.Data = tag[1]
+			case "param":
+				if len(tag) >= 3 && tag[1] == "format" {
+					audioData.Format = tag[2]
+				}
+			}
+		}
+	}
+	return &audioData
+}
+
+func extractCommand(event *nostr.Event) string {
+	for _, tag := range event.Tags {
+		if len(tag) >= 3 && tag[0] == "i" {
+			return tag[1]
+		}
+	}
+	return ""
 }
