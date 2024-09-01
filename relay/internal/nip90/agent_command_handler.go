@@ -19,10 +19,14 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 		return
 	}
 
+	// Extract the user's prompt
+	prompt := event.Content
+
 	log.Printf("Received agent command request for repo: %s", repo)
+	log.Printf("User prompt: %s", prompt)
 
 	// Get repository context
-	context := GetRepoContext(repo, conn)
+	context := GetRepoContext(repo, conn, prompt)
 	log.Printf("Repository context: %s", context)
 
 	// TODO: Implement agent command routing logic here
