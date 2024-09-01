@@ -8,9 +8,9 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      const message = JSON.stringify([
-        'EVENT',
-        {
+      const message = JSON.stringify({
+        type: 'EVENT',
+        data: {
           kind: 5252, // NIP-90 range for audio events; we'll use 5252 for speech-to-text
           content: JSON.stringify({
             audio: audioContent,
@@ -19,21 +19,22 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
           created_at: Math.floor(Date.now() / 1000),
           tags: [],
         },
-      ]);
+      });
 
       socket.send(message);
 
       // Set up a listener for the 6252 event (speech-to-text response)
       const listener = (event: MessageEvent) => {
         const data = JSON.parse(event.data);
-        if (data[0] === 'EVENT' && data[1].kind === 6252) {
-          const transcription = JSON.parse(data[1].content).text;
+        console.log("Received data:", data);
+        if (data.type === 'EVENT' && data.data.kind === 6252) {
+          const transcription = data.data.content;
           onTranscriptionReceived(transcription);
 
           // Send the 5838 event (agent command request)
-          const agentCommandMessage = JSON.stringify([
-            'EVENT',
-            {
+          const agentCommandMessage = JSON.stringify({
+            type: 'EVENT',
+            data: {
               kind: 5838, // NIP-90 kind for agent command request
               content: JSON.stringify({
                 command: transcription,
@@ -41,7 +42,7 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
             },
-          ]);
+          });
 
           socket.send(agentCommandMessage);
 
