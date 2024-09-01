@@ -26,27 +26,30 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
       const listener = (event: MessageEvent) => {
         const data = JSON.parse(event.data);
         console.log("Received data:", data);
-        if (data.type === 'EVENT' && data.data.kind === 6252) {
-          const transcription = data.data.content;
-          onTranscriptionReceived(transcription);
+        if (Array.isArray(data) && data[0] === "EVENT") {
+          const eventData = data[1];
+          if (eventData.kind === 6252) {
+            const transcription = eventData.content;
+            onTranscriptionReceived(transcription);
 
-          // Send the 5838 event (agent command request)
-          const agentCommandEvent = {
-            kind: 5838, // NIP-90 kind for agent command request
-            content: JSON.stringify({
-              command: transcription,
-            }),
-            created_at: Math.floor(Date.now() / 1000),
-            tags: [],
-          };
+            // Send the 5838 event (agent command request)
+            const agentCommandEvent = {
+              kind: 5838, // NIP-90 kind for agent command request
+              content: JSON.stringify({
+                command: transcription,
+              }),
+              created_at: Math.floor(Date.now() / 1000),
+              tags: [],
+            };
 
-          const agentCommandMessage = JSON.stringify(["EVENT", agentCommandEvent]);
+            const agentCommandMessage = JSON.stringify(["EVENT", agentCommandEvent]);
 
-          socket.send(agentCommandMessage);
+            socket.send(agentCommandMessage);
 
-          // Remove the listener after processing the 6252 event
-          socket.removeEventListener('message', listener);
-          resolve();
+            // Remove the listener after processing the 6252 event
+            socket.removeEventListener('message', listener);
+            resolve();
+          }
         }
       };
 
