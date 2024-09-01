@@ -61,4 +61,40 @@ Next Steps:
 	return summarizeContext(exampleContext)
 }
 
-// ... [rest of the file remains unchanged]
+func summarizeContext(context string) string {
+	summary, err := SummarizeContext(context)
+	if err != nil {
+		log.Printf("Error summarizing context: %v", err)
+		return "Error occurred while summarizing the context"
+	}
+	return summary
+}
+
+func SummarizeContext(context string) (string, error) {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts."},
+		{Role: "user", Content: "Please summarize the following repository context:\n\n" + context},
+	}
+
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content, nil
+	}
+
+	return "", nil
+}
+
+// Keeping this function for future use
+func IndexRepository(repo string) (string, error) {
+	// TODO: Implement repository indexing logic
+	// This function should clone the repository, analyze its contents,
+	// and generate a context string that describes the repository structure,
+	// key files, and other relevant information.
+
+	// Placeholder implementation
+	return "Repository: " + repo + "\nContents: [Placeholder for indexed content]", nil
+}
