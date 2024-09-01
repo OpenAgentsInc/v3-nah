@@ -43,7 +43,8 @@ export async function sendAudioToRelay(audioUri: string, socket: WebSocket, onTr
                 ["i", transcription, "text"],
                 ["output", "text/plain"],
                 ["bid", "0"],
-                ["t", "agent_command"]
+                ["t", "agent_command"],
+                ["param", "repo", "https://github.com/OpenAgentsInc/v3"]
               ],
             };
 
