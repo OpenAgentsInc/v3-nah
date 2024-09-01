@@ -2,8 +2,8 @@ package nip90
 
 import (
 	"log"
+	"github.com/openagentsinc/v3/relay/internal/groq"
 	// "database/sql" // Uncomment when implementing SQLite
-	// "github.com/openagentsinc/v3/relay/internal/groq" // Import the Groq package
 )
 
 func GetRepoContext(repo string) string {
@@ -34,19 +34,47 @@ func GetRepoContext(repo string) string {
 
 func startIndexingProcess(repo string) string {
 	log.Printf("Starting indexing process for repo: %s", repo)
-	// TODO: Implement actual indexing process
-	return "Indexing process started for " + repo
+	context, err := IndexRepository(repo)
+	if err != nil {
+		log.Printf("Error indexing repository: %v", err)
+		return "Error occurred while indexing the repository"
+	}
+	return summarizeContext(context)
 }
 
 func summarizeContext(context string) string {
-	// TODO: Implement Groq API call to summarize context
-	// summary, err := groq.SummarizeContext(context)
-	// if err != nil {
-	// 	log.Printf("Error summarizing context: %v", err)
-	// 	return ""
-	// }
-	// return summary
+	summary, err := SummarizeContext(context)
+	if err != nil {
+		log.Printf("Error summarizing context: %v", err)
+		return "Error occurred while summarizing the context"
+	}
+	return summary
+}
+
+func SummarizeContext(context string) (string, error) {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts."},
+		{Role: "user", Content: "Please summarize the following repository context:\n\n" + context},
+	}
+
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if len(response.Choices) > 0 {
+		return response.Choices[0].Message.Content, nil
+	}
+
+	return "", nil
+}
+
+func IndexRepository(repo string) (string, error) {
+	// TODO: Implement repository indexing logic
+	// This function should clone the repository, analyze its contents,
+	// and generate a context string that describes the repository structure,
+	// key files, and other relevant information.
 
 	// Placeholder implementation
-	return "Context summary for " + context
+	return "Repository: " + repo + "\nContents: [Placeholder for indexed content]", nil
 }
