@@ -55,9 +55,6 @@ Next Steps:
 10. Create detailed documentation for developers and users
 `
 
-	// Comment out the actual indexing process for now
-	// return startIndexingProcess(repo)
-
 	return summarizeContext(exampleContext)
 }
 
@@ -72,8 +69,8 @@ func summarizeContext(context string) string {
 
 func SummarizeContext(context string) (string, error) {
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts."},
-		{Role: "user", Content: "Please summarize the following repository context:\n\n" + context},
+		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 150 words."},
+		{Role: "user", Content: "Please summarize the following repository context in less than 150 words:\n\n" + context},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
