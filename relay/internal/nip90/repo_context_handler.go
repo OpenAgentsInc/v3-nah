@@ -260,7 +260,7 @@ func summarizeContext(context, prompt string) string {
 	}
 
 	if len(response.Choices) > 0 {
-		return fmt.Sprintf("User prompt: %s\n\nAnswer: %s", prompt, response.Choices[0].Message.Content)
+		return response.Choices[0].Message.Content
 	}
 
 	return "No summary generated"
