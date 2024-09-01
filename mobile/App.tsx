@@ -4,7 +4,7 @@ import React, { useCallback, useState } from "react"
 import { SafeAreaView, View } from "react-native"
 import { useStore } from "@/lib/store"
 import {
-  JetBrainsMono_400Regular_400Regular, useFonts
+  JetBrainsMono_400Regular, useFonts
 } from "@expo-google-fonts/jetbrains-mono"
 import Header from "./components/Header"
 import PushToTalkButton from "./components/PushToTalkButton"
@@ -25,7 +25,7 @@ interface Message {
 export default function App() {
   useNostrUser()
   let [fontsLoaded] = useFonts({
-    JetBrainsMono_400Regular_400Regular,
+    JetBrainsMono_400Regular,
   });
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
