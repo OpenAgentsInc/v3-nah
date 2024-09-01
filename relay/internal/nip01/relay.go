@@ -63,12 +63,7 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		reqMsg, ok := msg.Data.([]interface{})
-		if !ok {
-			log.Println("Error: ReqMessage data is not of type []interface{}")
-			return
-		}
-		r.handleReqMessage(conn, reqMsg)
+		r.handleReqMessage(conn, msg)
 	case CloseMessage:
 		subscriptionID, ok := msg.Data.(string)
 		if !ok {
@@ -98,20 +93,28 @@ func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	}
 }
 
-func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg []interface{}) {
-	if len(reqMsg) < 2 {
+func (r *Relay) handleReqMessage(conn *websocket.Conn, msg *Message) {
+	log.Printf("Handling REQ message: %+v", msg)
+
+	reqData, ok := msg.Data.([]interface{})
+	if !ok {
+		log.Println("Error: REQ message data is not of type []interface{}")
+		return
+	}
+
+	if len(reqData) < 2 {
 		log.Println("Invalid REQ message format")
 		return
 	}
 
-	subscriptionID, ok := reqMsg[1].(string)
+	subscriptionID, ok := reqData[0].(string)
 	if !ok {
 		log.Println("Invalid subscription ID in REQ message")
 		return
 	}
 
 	filters := make([]*nostr.Filter, 0)
-	for _, filterData := range reqMsg[2:] {
+	for _, filterData := range reqData[1:] {
 		filterMap, ok := filterData.(map[string]interface{})
 		if !ok {
 			log.Println("Invalid filter format in REQ message")
