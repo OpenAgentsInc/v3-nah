@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import RelayStatusIcon from './RelayStatusIcon';
 import RepoMenu from './RepoMenu';
@@ -20,6 +20,15 @@ const Header: React.FC<HeaderProps> = ({ isConnected }) => {
     setIsMenuVisible(false);
   };
 
+  const displayRepoUrl = useMemo(() => {
+    const url = new URL(activeRepoUrl);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      return `${pathParts[0]}/${pathParts[1]}`;
+    }
+    return activeRepoUrl;
+  }, [activeRepoUrl]);
+
   return (
     <View style={styles.header}>
       <TouchableOpacity onPress={handleLogoPress}>
@@ -27,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({ isConnected }) => {
       </TouchableOpacity>
       <View style={styles.repoUrlContainer}>
         <Text style={styles.repoUrlText} numberOfLines={1} ellipsizeMode="middle">
-          {activeRepoUrl}
+          {displayRepoUrl}
         </Text>
       </View>
       <RelayStatusIcon isConnected={isConnected} />
@@ -45,7 +54,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 50,
     backgroundColor: '#000',
-    borderBottomColor: '#fff',
+    borderBottomColor: 'rgba(255, 255, 255, 0.5)',
     borderBottomWidth: 1,
   },
   logo: {
@@ -57,7 +66,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   repoUrlText: {
-    color: '#fff',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontFamily: 'JetBrainsMono',
     fontSize: 12,
   },
