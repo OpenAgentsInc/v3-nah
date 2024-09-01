@@ -16,6 +16,7 @@ export default function App() {
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [transcription, setTranscription] = useState<string | null>(null)
+  const [agentResponse, setAgentResponse] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'pending'>('pending')
 
@@ -31,8 +32,8 @@ export default function App() {
       console.log('Audio permission not granted')
       return
     }
-    // Remove the line that clears the transcription
-    // setTranscription(null)
+    setTranscription(null)
+    setAgentResponse(null)
     await startRecording()
   }, [permissionStatus, startRecording])
 
@@ -47,7 +48,10 @@ export default function App() {
       const audioUri = await stopRecording()
       if (audioUri) {
         console.log('Audio recorded:', audioUri)
-        await sendAudioToRelay(audioUri, socket)
+        await sendAudioToRelay(audioUri, socket, (receivedTranscription) => {
+          setTranscription(receivedTranscription)
+          // The 5838 event is now sent automatically in sendAudioToRelay
+        })
       }
     } catch (error) {
       console.error('Error sending audio:', error)
@@ -60,10 +64,15 @@ export default function App() {
     if (socket) {
       const messageHandler = (event: MessageEvent) => {
         const data = JSON.parse(event.data)
-        console.log(data)
-        if (data.type === 'EVENT' && data.data.kind === 6252) {
-          setTranscription(data.data.content)
-          setIsProcessing(false)
+        console.log("event.data:", data)
+        if (data.type === 'EVENT') {
+          console.log("checking:", data.data)
+          if (data.data.kind === 6252) {
+            setTranscription(data.data.content)
+          } else if (data.data.kind === 6838) { // Changed from 5838 to 6838
+            setAgentResponse(data.data.content)
+            setIsProcessing(false)
+          }
         }
       }
       socket.addEventListener('message', messageHandler)
@@ -83,7 +92,10 @@ export default function App() {
         <View style={styles.content}>
           <View style={styles.transcriptionContainer}>
             {transcription && (
-              <Text style={styles.transcription}>{transcription}</Text>
+              <Text style={styles.transcription}>Transcription: {transcription}</Text>
+            )}
+            {agentResponse && (
+              <Text style={styles.agentResponse}>Agent Response: {agentResponse}</Text>
             )}
           </View>
         </View>
@@ -136,6 +148,13 @@ const styles = StyleSheet.create({
   },
   transcription: {
     color: '#fff',
+    fontFamily: 'JetBrainsMono',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  agentResponse: {
+    color: '#0f0',
     fontFamily: 'JetBrainsMono',
     fontSize: 18,
     textAlign: 'center',

@@ -63,12 +63,7 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 		}
 		r.handleEventMessage(conn, event)
 	case ReqMessage:
-		reqMsg, ok := msg.Data.(*nostr.ReqMessage)
-		if !ok {
-			log.Println("Error: ReqMessage data is not of type *nostr.ReqMessage")
-			return
-		}
-		r.handleReqMessage(conn, reqMsg)
+		r.handleReqMessage(conn, msg)
 	case CloseMessage:
 		subscriptionID, ok := msg.Data.(string)
 		if !ok {
@@ -84,24 +79,69 @@ func (r *Relay) handleMessage(conn *websocket.Conn, message []byte) {
 func (r *Relay) handleEventMessage(conn *websocket.Conn, event *nostr.Event) {
 	log.Printf("Handling event with kind: %d", event.Kind)
 
-	if event.Kind == 5252 {
-		var audioData AudioData
+	switch event.Kind {
+	case 5252:
+		var audioData struct {
+			Audio  string `json:"audio"`
+			Format string `json:"format"`
+		}
 		err := json.Unmarshal([]byte(event.Content), &audioData)
 		if err != nil {
 			log.Printf("Error unmarshaling audio data: %v", err)
 			return
 		}
-		r.handleAudioMessage(conn, &audioData)
-	} else {
+		r.handleAudioMessage(conn, &AudioData{
+			Data:   audioData.Audio,
+			Format: audioData.Format,
+		})
+	case 5838:
+		r.handleAgentCommandRequest(conn, event)
+	default:
 		// Handle other event types or broadcast to subscribers
 		r.subscriptionManager.BroadcastEvent(event)
 	}
 }
 
-func (r *Relay) handleReqMessage(conn *websocket.Conn, reqMsg *nostr.ReqMessage) {
-	// TODO: Implement subscription creation and event fetching
-	// For now, just create a subscription
-	sub := r.subscriptionManager.AddSubscription(reqMsg.SubscriptionID, []*nostr.Filter{&reqMsg.Filter})
+func (r *Relay) handleReqMessage(conn *websocket.Conn, msg *Message) {
+	log.Printf("Handling REQ message: %+v", msg)
+
+	reqData, ok := msg.Data.([]interface{})
+	if !ok {
+		log.Println("Error: REQ message data is not of type []interface{}")
+		return
+	}
+
+	if len(reqData) < 2 {
+		log.Println("Invalid REQ message format")
+		return
+	}
+
+	subscriptionID, ok := reqData[0].(string)
+	if !ok {
+		log.Println("Invalid subscription ID in REQ message")
+		return
+	}
+
+	filters := make([]*nostr.Filter, 0)
+	for _, filterData := range reqData[1:] {
+		filterMap, ok := filterData.(map[string]interface{})
+		if !ok {
+			log.Println("Invalid filter format in REQ message")
+			continue
+		}
+		filter := &nostr.Filter{}
+		// Parse filter data and populate the filter object
+		// This is a simplified version, you may need to add more fields
+		if ids, ok := filterMap["ids"].([]interface{}); ok {
+			filter.IDs = make([]string, len(ids))
+			for i, id := range ids {
+				filter.IDs[i], _ = id.(string)
+			}
+		}
+		filters = append(filters, filter)
+	}
+
+	sub := r.subscriptionManager.AddSubscription(subscriptionID, filters)
 	go r.handleSubscription(conn, sub)
 }
 
@@ -110,10 +150,10 @@ func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) 
 }
 
 func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
-	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Audio))
+	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Data))
 
 	// Transcribe the audio using Groq API
-	transcription, err := TranscribeAudio(audioData.Audio, audioData.Format)
+	transcription, err := TranscribeAudio(audioData.Data, audioData.Format)
 	if err != nil {
 		log.Printf("Error transcribing audio: %v", err)
 		transcription = "Error transcribing audio"
@@ -128,27 +168,38 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	}
 
 	// Send the response back to the client
-	response, err := CreateEventMessage(responseEvent)
-	if err != nil {
-		log.Println("Error creating audio response message:", err)
-		return
-	}
-
+	response := CreateEventMessage(responseEvent)
 	err = conn.WriteJSON(response)
 	if err != nil {
 		log.Println("Error writing audio response to WebSocket:", err)
 	}
 }
 
+func (r *Relay) handleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
+	log.Printf("Received agent command request: %s", event.Content)
+
+	// TODO: Implement agent command routing logic here
+	// For now, we'll just echo the command back as a response
+
+	responseEvent := &nostr.Event{
+		Kind:      6838, // Updated event kind for agent command response
+		Content:   "Acknowledged. Will respond shortly.",
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	// Send the response back to the client
+	response := CreateEventMessage(responseEvent)
+	err := conn.WriteJSON(response)
+	if err != nil {
+		log.Println("Error writing agent command response to WebSocket:", err)
+	}
+}
+
 func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
 	for event := range sub.Events {
-		msg, err := CreateEventMessage(event)
-		if err != nil {
-			log.Println("Error creating event message:", err)
-			continue
-		}
-
-		err = conn.WriteJSON(msg)
+		msg := CreateEventMessage(event)
+		err := conn.WriteJSON(msg)
 		if err != nil {
 			log.Println("Error writing event to WebSocket:", err)
 			break
