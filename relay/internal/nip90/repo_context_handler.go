@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"net/url"
 
 	"github.com/openagentsinc/v3/relay/internal/github"
 	"github.com/openagentsinc/v3/relay/internal/groq"
@@ -14,7 +15,7 @@ func GetRepoContext(repo string) string {
 
 	owner, repoName := parseRepo(repo)
 	if owner == "" || repoName == "" {
-		return "Error: Invalid repository format. Expected 'owner/repo'."
+		return "Error: Invalid repository format. Expected 'owner/repo' or a valid GitHub URL."
 	}
 
 	context, err := analyzeRepository(owner, repoName)
@@ -27,6 +28,20 @@ func GetRepoContext(repo string) string {
 }
 
 func parseRepo(repo string) (string, string) {
+	// Check if the repo is a URL
+	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") {
+		parsedURL, err := url.Parse(repo)
+		if err != nil {
+			return "", ""
+		}
+		parts := strings.Split(parsedURL.Path, "/")
+		if len(parts) < 3 {
+			return "", ""
+		}
+		return parts[1], parts[2]
+	}
+
+	// If not a URL, expect the format "owner/repo"
 	parts := strings.Split(repo, "/")
 	if len(parts) != 2 {
 		return "", ""
