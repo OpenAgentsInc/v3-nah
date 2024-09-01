@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"github.com/openagentsinc/v3/relay/internal/nip90"
+	"github.com/openagentsinc/v3/relay/internal/common"
 )
 
 type Relay struct {
@@ -136,7 +137,7 @@ func (r *Relay) handleCloseMessage(conn *websocket.Conn, subscriptionID string) 
 
 func (r *Relay) handleSubscription(conn *websocket.Conn, sub *Subscription) {
 	for event := range sub.Events {
-		msg := CreateEventMessage(event)
+		msg := common.CreateEventMessage(event)
 		err := conn.WriteJSON(msg)
 		if err != nil {
 			log.Println("Error writing event to WebSocket:", err)
