@@ -1,77 +1,238 @@
 package nip90
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
+	"net/url"
+	"time"
 
+	"github.com/gorilla/websocket"
+	"github.com/openagentsinc/v3/relay/internal/github"
 	"github.com/openagentsinc/v3/relay/internal/groq"
-	// "database/sql" // Uncomment when implementing SQLite
+	"github.com/openagentsinc/v3/relay/internal/nostr"
+	"github.com/openagentsinc/v3/relay/internal/common"
 )
 
-func GetRepoContext(repo string) string {
+func GetRepoContext(repo string, conn *websocket.Conn, prompt string) string {
 	log.Printf("GetRepoContext called for repo: %s", repo)
+	log.Printf("User prompt: %s", prompt)
 
-	// Simulating database retrieval with example data
-	exampleContext := `
-Repository: https://github.com/OpenAgentsInc/v3
-
-Project Overview:
-OpenAgents v3 is the next iteration of the OpenAgents platform, focusing on decentralized AI agents and tools. The project aims to provide a robust framework for creating, managing, and interacting with AI agents using Nostr for communication and Bitcoin for payments.
-
-README Highlights:
-- Project structure: mobile (React Native app) and relay (Custom Nostr relay & NIP-90 service provider)
-- Key principles: Decentralization, Bitcoin payments, Nostr authentication, Cross-platform support
-- Technologies: Bitcoin via Lightning, Nostr, React & React Native, Golang
-
-Tech Stack:
-- Backend: Golang
-- Frontend: React Native (mobile app)
-- Communication: Nostr protocol
-- Payments: Bitcoin Lightning Network
-- API Integration: Groq API for AI model interactions
-
-Major Functions/Files:
-1. relay/internal/nip90/handler.go: Handles NIP-90 events, including audio messages and agent commands
-2. relay/internal/groq/tool_use.go: Integrates with Groq API for AI model interactions
-3. relay/internal/nip90/agent_command_handler.go: Processes agent command requests
-4. relay/internal/nip90/event_logger.go: Logs event details for debugging and monitoring
-5. relay/internal/nip90/response_handler.go: Manages responses to agent commands
-
-Codebase Observations:
-- The project is well-structured with clear separation of concerns
-- Extensive use of Go interfaces for flexibility and testability
-- Integration with Groq API for AI capabilities
-- Custom implementation of Nostr relay functionality
-- Focus on security and decentralization in the architecture
-
-Next Steps:
-1. Implement SQLite database for caching repository contexts
-2. Develop the repository indexing process in IndexRepository function
-3. Enhance error handling and implement retry mechanisms for API calls
-4. Optimize the context summarization process for large codebases
-5. Implement more sophisticated AI agent interactions using Groq API
-6. Expand the mobile app functionality to interact with the custom Nostr relay
-7. Develop and integrate Bitcoin Lightning Network payment features
-8. Implement comprehensive testing suite for all components
-9. Set up CI/CD pipeline for automated testing and deployment
-10. Create detailed documentation for developers and users
-`
-
-	return summarizeContext(exampleContext)
-}
-
-func summarizeContext(context string) string {
-	summary, err := SummarizeContext(context)
-	if err != nil {
-		log.Printf("Error summarizing context: %v", err)
-		return "Error occurred while summarizing the context"
+	owner, repoName := parseRepo(repo)
+	if owner == "" || repoName == "" {
+		return "Error: Invalid repository format. Expected 'owner/repo' or a valid GitHub URL."
 	}
-	return summary
+
+	// Check if the prompt is a simple structural question
+	if isSimpleStructuralQuestion(prompt) {
+		return handleSimpleStructuralQuestion(owner, repoName, prompt, conn)
+	}
+
+	context, err := analyzeRepository(owner, repoName, conn, prompt)
+	if err != nil {
+		if err == github.ErrGitHubTokenNotSet {
+			return fmt.Sprintf("Error: %v", err)
+		}
+		log.Printf("Error analyzing repository: %v", err)
+		return fmt.Sprintf("Error analyzing repository: %v", err)
+	}
+
+	return summarizeContext(context, prompt)
 }
 
-func SummarizeContext(context string) (string, error) {
+func isSimpleStructuralQuestion(prompt string) bool {
+	lowercasePrompt := strings.ToLower(prompt)
+	return strings.Contains(lowercasePrompt, "what folders") ||
+		strings.Contains(lowercasePrompt, "list folders") ||
+		strings.Contains(lowercasePrompt, "show folders") ||
+		strings.Contains(lowercasePrompt, "what directories") ||
+		strings.Contains(lowercasePrompt, "list directories") ||
+		strings.Contains(lowercasePrompt, "show directories")
+}
+
+func handleSimpleStructuralQuestion(owner, repo, prompt string, conn *websocket.Conn) string {
+	rootContent, err := github.ViewFolder(owner, repo, "", "")
+	if err != nil {
+		return fmt.Sprintf("Error viewing root folder: %v", err)
+	}
+
+	folders := extractFolders(rootContent)
+	response := fmt.Sprintf("The repository contains the following folders:\n\n%s", strings.Join(folders, "\n"))
+
+	return response
+}
+
+func extractFolders(content string) []string {
+	lines := strings.Split(content, "\n")
+	var folders []string
+	for _, line := range lines {
+		if strings.HasSuffix(line, "(dir)") {
+			folders = append(folders, strings.TrimSuffix(line, " (dir)"))
+		}
+	}
+	return folders
+}
+
+func parseRepo(repo string) (string, string) {
+	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") {
+		parsedURL, err := url.Parse(repo)
+		if err != nil {
+			return "", ""
+		}
+		parts := strings.Split(parsedURL.Path, "/")
+		if len(parts) < 3 {
+			return "", ""
+		}
+		return parts[1], parts[2]
+	}
+
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
+
+func analyzeRepository(owner, repo string, conn *websocket.Conn, prompt string) (string, error) {
+	var context strings.Builder
+	context.WriteString(fmt.Sprintf("Repository: https://github.com/%s/%s\n\n", owner, repo))
+
+	rootContent, err := github.ViewFolder(owner, repo, "", "")
+	if err != nil {
+		return "", fmt.Errorf("error viewing root folder: %v", err)
+	}
+
+	tools := []groq.Tool{
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "view_file",
+				Description: "View the contents of a file in the repository",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"path": {Type: "string", Description: "The path of the file to view"},
+					},
+					Required: []string{"path"},
+				},
+			},
+		},
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "view_folder",
+				Description: "View the contents of a folder in the repository",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"path": {Type: "string", Description: "The path of the folder to view"},
+					},
+					Required: []string{"path"},
+				},
+			},
+		},
+		{
+			Type: "function",
+			Function: groq.ToolFunction{
+				Name:        "generate_summary",
+				Description: "Generate a summary of the given content",
+				Parameters: groq.Parameters{
+					Type: "object",
+					Properties: map[string]groq.Property{
+						"content": {Type: "string", Description: "The content to summarize"},
+					},
+					Required: []string{"content"},
+				},
+			},
+		},
+	}
+
 	messages := []groq.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant that summarizes repository contexts. Provide concise summaries in less than 50 words."},
-		{Role: "user", Content: "Please summarize the following repository context in less than 50 words:\n\n" + context},
+		{Role: "system", Content: "You are a repository analyzer. Analyze the repository structure and content using the provided tools. Focus on the user's prompt and find relevant information. Always provide a direct and detailed answer to the user's question."},
+		{Role: "user", Content: fmt.Sprintf("Analyze the following repository structure and provide a detailed summary, focusing on answering the user's prompt: '%s'\n\nRepository structure:\n%s", prompt, rootContent)},
+	}
+
+	for i := 0; i < 5; i++ { // Limit to 5 iterations to prevent infinite loops
+		response, err := groq.ChatCompletionWithTools(messages, tools, nil)
+		if err != nil {
+			return "", fmt.Errorf("error in ChatCompletionWithTools: %v", err)
+		}
+
+		if len(response.Choices) == 0 || len(response.Choices[0].Message.ToolCalls) == 0 {
+			break
+		}
+
+		for _, toolCall := range response.Choices[0].Message.ToolCalls {
+			result, err := executeToolCall(owner, repo, toolCall, conn)
+			if err != nil {
+				log.Printf("Error executing tool call: %v", err)
+				continue
+			}
+			messages = append(messages, groq.ChatMessage{
+				Role:    "function",
+				Content: result,
+			})
+			context.WriteString(fmt.Sprintf("%s:\n%s\n\n", toolCall.Function.Name, result))
+		}
+
+		messages = append(messages, groq.ChatMessage{
+			Role:    response.Choices[0].Message.Role,
+			Content: response.Choices[0].Message.Content,
+		})
+	}
+
+	return context.String(), nil
+}
+
+func executeToolCall(owner, repo string, toolCall groq.ToolCall, conn *websocket.Conn) (string, error) {
+	var args map[string]string
+	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshaling tool call arguments: %v", err)
+	}
+
+	switch toolCall.Function.Name {
+	case "view_file":
+		content, err := github.ViewFile(owner, repo, args["path"], "")
+		if err != nil {
+			return "", err
+		}
+		sendViewedFileEvent(conn, args["path"])
+		return content, nil
+	case "view_folder":
+		return github.ViewFolder(owner, repo, args["path"], "")
+	case "generate_summary":
+		return generateSummary(args["content"])
+	default:
+		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
+	}
+}
+
+func sendViewedFileEvent(conn *websocket.Conn, path string) {
+	if conn == nil {
+		log.Println("WebSocket connection is not set")
+		return
+	}
+
+	viewedEvent := &nostr.Event{
+		Kind:      6838,
+		Content:   fmt.Sprintf("Viewed %s", path),
+		CreatedAt: time.Now(),
+		Tags:      [][]string{},
+	}
+
+	response := common.CreateEventMessage(viewedEvent)
+	err := conn.WriteJSON(response)
+	if err != nil {
+		log.Printf("Error writing viewed file event to WebSocket: %v", err)
+	}
+}
+
+func generateSummary(content string) (string, error) {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant that summarizes content. Provide concise summaries."},
+		{Role: "user", Content: "Please summarize the following content:\n\n" + content},
 	}
 
 	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
@@ -83,16 +244,32 @@ func SummarizeContext(context string) (string, error) {
 		return response.Choices[0].Message.Content, nil
 	}
 
-	return "", nil
+	return "", fmt.Errorf("no summary generated")
 }
 
-// Keeping this function for future use
-func IndexRepository(repo string) (string, error) {
-	// TODO: Implement repository indexing logic
-	// This function should clone the repository, analyze its contents,
-	// and generate a context string that describes the repository structure,
-	// key files, and other relevant information.
+func summarizeContext(context, prompt string) string {
+	messages := []groq.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant that analyzes repository contexts. Provide specific and detailed answers focusing on the user's prompt. Always give a direct and comprehensive answer to the user's question, using information from the repository context. Limit your response to approximately 75 words."},
+		{Role: "user", Content: fmt.Sprintf("Based on the following repository context, please provide a detailed and specific answer to the user's prompt in about 75 words: '%s'\n\nRepository context:\n%s", prompt, context)},
+	}
 
-	// Placeholder implementation
-	return "Repository: " + repo + "\nContents: [Placeholder for indexed content]", nil
+	response, err := groq.ChatCompletionWithTools(messages, nil, nil)
+	if err != nil {
+		log.Printf("Error summarizing context: %v", err)
+		return "Error occurred while analyzing the repository context"
+	}
+
+	if len(response.Choices) > 0 {
+		return limitWords(response.Choices[0].Message.Content, 75)
+	}
+
+	return "No specific information found related to the query"
+}
+
+func limitWords(s string, maxWords int) string {
+	words := strings.Fields(s)
+	if len(words) <= maxWords {
+		return s
+	}
+	return strings.Join(words[:maxWords], " ") + "..."
 }
