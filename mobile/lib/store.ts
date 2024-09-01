@@ -16,11 +16,13 @@ interface State {
   userSecret: string | null,
   ndkInstance: NDK | null,
   events: NDKEvent[],
+  activeRepoUrl: string,
   setUserPubkey: (pubkey: string) => void,
   setUserSecret: (secret: string) => void,
   addEvent: (event: NDKEvent) => void,
   getEventsInReverseChronologicalOrder: () => NDKEvent[],
-  initializeNDK: () => void
+  initializeNDK: () => void,
+  setActiveRepoUrl: (url: string) => void
 }
 
 export const useStore = create<State>()(
@@ -30,6 +32,7 @@ export const useStore = create<State>()(
       userSecret: null,
       ndkInstance: null,
       events: [],
+      activeRepoUrl: 'https://github.com/OpenAgentsInc/v3',
       setUserPubkey: (userPubkey) => set({ userPubkey }),
       setUserSecret: (userSecret) => set({ userSecret }),
       addEvent: (event: NDKEvent) => set((state) => ({
@@ -96,6 +99,7 @@ export const useStore = create<State>()(
           addEvent(event); // Add the received event to the store
         });
       },
+      setActiveRepoUrl: (url) => set({ activeRepoUrl: url }),
     }),
     {
       name: "nostr-keys",
