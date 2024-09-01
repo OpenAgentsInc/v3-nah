@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
+	"github.com/openagentsinc/v3/relay/internal/groq"
 )
 
 type Relay struct {
@@ -153,7 +154,7 @@ func (r *Relay) handleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	log.Printf("Received audio message. Format: %s, Length: %d\n", audioData.Format, len(audioData.Data))
 
 	// Transcribe the audio using Groq API
-	transcription, err := TranscribeAudio(audioData.Data, audioData.Format)
+	transcription, err := groq.TranscribeAudio(audioData.Data, audioData.Format)
 	if err != nil {
 		log.Printf("Error transcribing audio: %v", err)
 		transcription = "Error transcribing audio"
