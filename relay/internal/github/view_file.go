@@ -25,6 +25,16 @@ type GitHubItem struct {
 	Path string `json:"path"`
 }
 
+var ErrGitHubTokenNotSet = fmt.Errorf("GITHUB_TOKEN environment variable is not set. Please set it to a valid GitHub personal access token with repo scope")
+
+func getGitHubToken() (string, error) {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return "", ErrGitHubTokenNotSet
+	}
+	return token, nil
+}
+
 func ViewFile(owner, repo, path, branch string) (string, error) {
 	url := fmt.Sprintf("%s/repos/%s/%s/contents/%s", githubAPIBaseURL, owner, repo, path)
 	if branch != "" {
@@ -36,9 +46,9 @@ func ViewFile(owner, repo, path, branch string) (string, error) {
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		return "", fmt.Errorf("GITHUB_TOKEN environment variable is not set")
+	token, err := getGitHubToken()
+	if err != nil {
+		return "", err
 	}
 	req.Header.Set("Authorization", "token "+token)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -88,9 +98,9 @@ func ViewFolder(owner, repo, path, branch string) (string, error) {
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		return "", fmt.Errorf("GITHUB_TOKEN environment variable is not set")
+	token, err := getGitHubToken()
+	if err != nil {
+		return "", err
 	}
 	req.Header.Set("Authorization", "token "+token)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
