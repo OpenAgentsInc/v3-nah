@@ -32,30 +32,38 @@ type AudioData struct {
 }
 
 func ParseMessage(data []byte) (*Message, error) {
+	var msg Message
+	err := json.Unmarshal(data, &msg)
+	if err == nil {
+		log.Printf("Received message type: %s", msg.Type)
+		return handleObjectMessage(&msg)
+	}
+
+	// If object parsing fails, try array parsing
 	var arrayMsg []json.RawMessage
-	err := json.Unmarshal(data, &arrayMsg)
+	err = json.Unmarshal(data, &arrayMsg)
 	if err == nil && len(arrayMsg) > 0 {
 		var msgType string
 		err = json.Unmarshal(arrayMsg[0], &msgType)
 		if err == nil {
-			log.Printf("Received message type: %s", msgType)
+			log.Printf("Received array message type: %s", msgType)
 			return handleArrayMessage(MessageType(msgType), arrayMsg[1:])
 		}
 	}
 
-	var msg Message
-	err = json.Unmarshal(data, &msg)
-	if err != nil {
-		log.Printf("Error unmarshaling as Message struct: %v", err)
-		return nil, err
-	}
+	log.Printf("Error parsing message: %v", err)
+	return nil, err
+}
 
-	// log.Printf("Parsed message type: %s", msg.Type)
-
+func handleObjectMessage(msg *Message) (*Message, error) {
 	switch msg.Type {
 	case EventMessage:
 		var event nostr.Event
-		err = json.Unmarshal(msg.Data.([]byte), &event)
+		data, err := json.Marshal(msg.Data)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, &event)
 		if err != nil {
 			log.Printf("Error unmarshaling EventMessage data: %v", err)
 			return nil, err
@@ -63,7 +71,11 @@ func ParseMessage(data []byte) (*Message, error) {
 		msg.Data = &event
 	case ReqMessage:
 		var filter nostr.Filter
-		err = json.Unmarshal(msg.Data.([]byte), &filter)
+		data, err := json.Marshal(msg.Data)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, &filter)
 		if err != nil {
 			log.Printf("Error unmarshaling ReqMessage data: %v", err)
 			return nil, err
@@ -71,7 +83,11 @@ func ParseMessage(data []byte) (*Message, error) {
 		msg.Data = &filter
 	case AudioMessage:
 		var audioData AudioData
-		err = json.Unmarshal(msg.Data.([]byte), &audioData)
+		data, err := json.Marshal(msg.Data)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, &audioData)
 		if err != nil {
 			log.Printf("Error unmarshaling AudioMessage data: %v", err)
 			return nil, err
@@ -79,7 +95,7 @@ func ParseMessage(data []byte) (*Message, error) {
 		msg.Data = &audioData
 	}
 
-	return &msg, nil
+	return msg, nil
 }
 
 func handleArrayMessage(msgType MessageType, data []json.RawMessage) (*Message, error) {
