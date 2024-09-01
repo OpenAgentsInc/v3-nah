@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import RelayStatusIcon from './RelayStatusIcon';
-import RepoMenu from './RepoMenu';
-import { useStore } from '../lib/store';
+import React, { useMemo, useState } from "react"
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { useStore } from "../lib/store"
+import RelayStatusIcon from "./RelayStatusIcon"
+import RepoMenu from "./RepoMenu"
 
 interface HeaderProps {
   isConnected: boolean;
@@ -55,8 +55,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 54,
     backgroundColor: '#000',
-    borderBottomColor: 'rgba(255, 255, 255, 0.5)',
-    borderBottomWidth: 1,
+    // borderBottomColor: 'rgba(255, 255, 255, 0.5)',
+    // borderBottomWidth: 1,
   },
   logo: {
     width: 40,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   repoUrlText: {
     color: 'rgba(255, 255, 255, 0.5)',
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 12,
   },
 });

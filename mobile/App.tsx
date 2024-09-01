@@ -3,15 +3,18 @@ import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useState } from "react"
 import { SafeAreaView, View } from "react-native"
 import { useStore } from "@/lib/store"
-import PushToTalkButton from "./components/PushToTalkButton"
+import {
+  JetBrainsMono_400Regular_400Regular, useFonts
+} from "@expo-google-fonts/jetbrains-mono"
 import Header from "./components/Header"
+import PushToTalkButton from "./components/PushToTalkButton"
 import TranscriptionDisplay from "./components/TranscriptionDisplay"
 import { sendAudioToRelay } from "./lib/sendAudioToRelay"
+import { useAudioPermission } from "./lib/useAudioPermission"
 import { useAudioRecording } from "./lib/useAudioRecording"
+import { useMessageHandler } from "./lib/useMessageHandler"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
-import { useAudioPermission } from "./lib/useAudioPermission"
-import { useMessageHandler } from "./lib/useMessageHandler"
 import { appStyles } from "./styles/appStyles"
 
 interface Message {
@@ -21,6 +24,9 @@ interface Message {
 
 export default function App() {
   useNostrUser()
+  let [fontsLoaded] = useFonts({
+    JetBrainsMono_400Regular_400Regular,
+  });
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [messages, setMessages] = useState<Message[]>([])

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Modal, Text } from 'react-native';
-import { useStore } from '../lib/store';
+import React, { useState } from "react"
+import {
+  Modal, StyleSheet, Text, TextInput, TouchableOpacity, View
+} from "react-native"
+import { useStore } from "../lib/store"
 
 interface RepoMenuProps {
   isVisible: boolean;
@@ -75,7 +77,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
     color: '#fff',
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
   },
   input: {
     height: 40,
@@ -85,7 +87,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
     color: '#fff',
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -101,7 +103,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
   },
 });
 

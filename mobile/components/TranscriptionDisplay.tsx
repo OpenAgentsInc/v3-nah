@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React from "react"
+import { ScrollView, StyleSheet, Text, View } from "react-native"
 
 interface Message {
   type: 'transcription' | 'agentResponse';
@@ -34,13 +34,13 @@ const styles = StyleSheet.create({
   },
   transcription: {
     color: 'rgba(255, 255, 255, 0.75)', // White with 75% opacity
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 16,
     marginBottom: 10,
   },
   agentResponse: {
     color: '#fff', // Solid white
-    fontFamily: 'JetBrainsMono',
+    fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 16,
     marginBottom: 20,
   },
