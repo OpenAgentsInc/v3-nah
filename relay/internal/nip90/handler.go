@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/openagentsinc/v3/relay/internal/nostr"
 	"github.com/openagentsinc/v3/relay/internal/groq"
-	"github.com/openagentsinc/v3/relay/internal/nip01"
+	"github.com/openagentsinc/v3/relay/internal/common"
 )
 
 type AudioData struct {
@@ -35,7 +35,7 @@ func HandleAudioMessage(conn *websocket.Conn, audioData *AudioData) {
 	}
 
 	// Send the response back to the client
-	response := nip01.CreateEventMessage(responseEvent)
+	response := common.CreateEventMessage(responseEvent)
 	err = conn.WriteJSON(response)
 	if err != nil {
 		log.Println("Error writing audio response to WebSocket:", err)
@@ -56,7 +56,7 @@ func HandleAgentCommandRequest(conn *websocket.Conn, event *nostr.Event) {
 	}
 
 	// Send the response back to the client
-	response := nip01.CreateEventMessage(responseEvent)
+	response := common.CreateEventMessage(responseEvent)
 	err := conn.WriteJSON(response)
 	if err != nil {
 		log.Println("Error writing agent command response to WebSocket:", err)
