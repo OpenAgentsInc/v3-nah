@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas } from '@react-three/fiber/native';
+import { Canvas, useThree } from '@react-three/fiber/native';
 import { OrbitControls } from '@react-three/drei/native';
+import * as THREE from 'three';
 
 interface Node {
   id: string;
@@ -20,24 +21,25 @@ interface GraphCanvasProps {
 
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
   return (
-    <mesh position={position}>
-      <sphereGeometry args={[0.1, 32, 32]} />
-      <meshStandardMaterial color="white" />
-    </mesh>
+    <group position={position}>
+      <mesh>
+        <sphereGeometry args={[0.1, 32, 32]} />
+        <meshBasicMaterial color="black" />
+      </mesh>
+      <lineSegments>
+        <sphereGeometry args={[0.1, 32, 32]} />
+        <lineBasicMaterial color="white" />
+      </lineSegments>
+    </group>
   );
 };
 
 const Edge: React.FC<{ start: [number, number, number]; end: [number, number, number] }> = ({ start, end }) => {
+  const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+
   return (
-    <line>
-      <bufferGeometry attach="geometry">
-        <bufferAttribute
-          attachObject={['attributes', 'position']}
-          count={2}
-          array={new Float32Array([...start, ...end])}
-          itemSize={3}
-        />
-      </bufferGeometry>
+    <line geometry={lineGeometry}>
       <lineBasicMaterial attach="material" color="white" linewidth={1} />
     </line>
   );
