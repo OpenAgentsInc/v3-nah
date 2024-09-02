@@ -19,6 +19,8 @@ interface GraphCanvasProps {
   edges: Edge[];
 }
 
+const NODE_RADIUS = 0.1;
+
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
   const ref = useRef<THREE.Mesh>(null);
 
@@ -31,11 +33,11 @@ const Node: React.FC<{ position: [number, number, number] }> = ({ position }) =>
   return (
     <group position={position}>
       <mesh ref={ref}>
-        <circleGeometry args={[0.1, 32]} />
+        <circleGeometry args={[NODE_RADIUS, 32]} />
         <meshBasicMaterial color="black" />
       </mesh>
       <mesh ref={ref}>
-        <ringGeometry args={[0.09, 0.1, 32]} />
+        <ringGeometry args={[NODE_RADIUS - 0.01, NODE_RADIUS, 32]} />
         <meshBasicMaterial color="white" />
       </mesh>
     </group>
@@ -43,7 +45,14 @@ const Node: React.FC<{ position: [number, number, number] }> = ({ position }) =>
 };
 
 const Edge: React.FC<{ start: [number, number, number]; end: [number, number, number] }> = ({ start, end }) => {
-  const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+  const startVec = new THREE.Vector3(...start);
+  const endVec = new THREE.Vector3(...end);
+  const direction = endVec.clone().sub(startVec).normalize();
+  
+  const adjustedStart = startVec.clone().add(direction.clone().multiplyScalar(NODE_RADIUS));
+  const adjustedEnd = endVec.clone().sub(direction.clone().multiplyScalar(NODE_RADIUS));
+
+  const points = [adjustedStart, adjustedEnd];
   const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
 
   return (
@@ -56,9 +65,6 @@ const Edge: React.FC<{ start: [number, number, number]; end: [number, number, nu
 const Graph: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
   return (
     <>
-      {nodes.map((node) => (
-        <Node key={node.id} position={node.position} />
-      ))}
       {edges.map((edge, index) => {
         const sourceNode = nodes.find((n) => n.id === edge.source);
         const targetNode = nodes.find((n) => n.id === edge.target);
@@ -73,6 +79,9 @@ const Graph: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
         }
         return null;
       })}
+      {nodes.map((node) => (
+        <Node key={node.id} position={node.position} />
+      ))}
     </>
   );
 };
