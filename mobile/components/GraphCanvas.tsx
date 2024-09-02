@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas, useFrame, extend } from '@react-three/fiber/native';
-import { OrbitControls, shaderMaterial } from '@react-three/drei/native';
+import { Canvas, useFrame } from '@react-three/fiber/native';
+import { OrbitControls } from '@react-three/drei/native';
 import * as THREE from 'three';
 
 interface Node {
@@ -20,25 +20,7 @@ interface GraphCanvasProps {
 }
 
 const NODE_RADIUS = 0.1;
-
-const LineShaderMaterial = shaderMaterial(
-  { color: new THREE.Color('white') },
-  // Vertex Shader
-  `
-    void main() {
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-  // Fragment Shader
-  `
-    uniform vec3 color;
-    void main() {
-      gl_FragColor = vec4(color, 1.0);
-    }
-  `
-);
-
-extend({ LineShaderMaterial });
+const LINE_WIDTH = 0.02;
 
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
   const ref = useRef<THREE.Mesh>(null);
@@ -71,14 +53,38 @@ const Edge: React.FC<{ start: [number, number, number]; end: [number, number, nu
   const adjustedStart = startVec.clone().add(direction.clone().multiplyScalar(NODE_RADIUS));
   const adjustedEnd = endVec.clone().sub(direction.clone().multiplyScalar(NODE_RADIUS));
 
-  const points = useMemo(() => [adjustedStart, adjustedEnd], [adjustedStart, adjustedEnd]);
-  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
+  const edgeGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(18);
+    const normal = new THREE.Vector3();
+    const side = new THREE.Vector3();
+
+    normal.subVectors(adjustedEnd, adjustedStart).normalize();
+    side.crossVectors(normal, new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(LINE_WIDTH / 2);
+
+    const vertices = [
+      adjustedStart.clone().add(side),
+      adjustedStart.clone().sub(side),
+      adjustedEnd.clone().add(side),
+      adjustedEnd.clone().add(side),
+      adjustedStart.clone().sub(side),
+      adjustedEnd.clone().sub(side),
+    ];
+
+    for (let i = 0; i < vertices.length; i++) {
+      positions[i * 3] = vertices[i].x;
+      positions[i * 3 + 1] = vertices[i].y;
+      positions[i * 3 + 2] = vertices[i].z;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geometry;
+  }, [adjustedStart, adjustedEnd]);
 
   return (
-    <line geometry={geometry}>
-      {/* @ts-ignore */}
-      <lineShaderMaterial attach="material" color="white" />
-    </line>
+    <mesh geometry={edgeGeometry}>
+      <meshBasicMaterial color="white" side={THREE.DoubleSide} />
+    </mesh>
   );
 };
 
