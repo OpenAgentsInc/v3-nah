@@ -15,10 +15,13 @@
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo/vector-icons": "^14.0.0",
     "@nostr-dev-kit/ndk": "^2.10.0",
+    "@react-three/drei": "^9.111.5",
+    "@react-three/fiber": "^8.17.6",
     "expo": "~51.0.28",
     "expo-av": "~14.0.7",
     "expo-crypto": "^13.0.2",
     "expo-font": "~12.0.9",
+    "expo-gl": "~14.0.2",
     "expo-secure-store": "~13.0.2",
     "expo-splash-screen": "~0.27.5",
     "expo-status-bar": "~1.12.1",
@@ -27,6 +30,7 @@
     "react": "18.2.0",
     "react-native": "0.74.5",
     "text-encoding-polyfill": "^0.6.7",
+    "three": "^0.168.0",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
