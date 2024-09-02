@@ -42,6 +42,31 @@ The implementation process includes:
 - Generating summaries
 - Enhancing the query system to leverage the graph structure
 
+## Nostr-based Communication
+
+OpenAgents uses Nostr for communication between the mobile app (client) and the relay (distributed backend). This approach leverages Nostr's decentralized nature and event-based communication model.
+
+### Event Types
+
+OpenAgents uses custom Nostr event kinds for various operations:
+
+1. **Agent Command Request (kind 5838)**: When a user requests the agent to perform an action.
+2. **Agent Command Response (kind 6838)**: Updates and responses from the agent as it processes the request.
+3. **Speech-to-Text Request (kind 5252)**: For voice command transcription.
+4. **Speech-to-Text Response (kind 6252)**: Transcription results.
+
+### Communication Flow
+
+1. The user initiates an action in the mobile app (e.g., a voice command).
+2. The app sends a kind 5252 event to connected relay(s) for speech-to-text conversion.
+3. The relay processes the audio and responds with a kind 6252 event containing the transcription.
+4. The app then sends a kind 5838 event with the transcribed command to the relay.
+5. The relay begins processing the command, which may involve graph-building (indexing) to gather necessary context.
+6. As the relay processes the request, it sends one or more kind 6838 events back to the app with updates or partial results.
+7. Once processing is complete, the relay sends a final kind 6838 event with the full response.
+
+This event-based system allows for asynchronous, real-time communication between the app and the distributed backend, enabling responsive and flexible interactions.
+
 ## Practical Applications
 
 This graph-based knowledge representation enables complex queries requiring holistic data understanding. Examples:
@@ -57,5 +82,7 @@ The agent uses the graph to find relevant context for building a prompt, which i
 2. Efficient Retrieval: Vector embeddings and graph traversal enable quick information retrieval.
 3. Holistic Analysis: Grouping nodes into communities allows higher-level understanding of data structure.
 4. Flexible Querying: Users can ask questions that require synthesizing information from multiple parts of the knowledge base.
+5. Decentralized Communication: Nostr-based messaging enables a distributed and resilient backend architecture.
+6. Real-time Updates: The event-based system allows for immediate feedback and progressive responses to user queries.
 
-This graph-based approach, enhanced by GraphRAG, forms the core of OpenAgents' ability to provide intelligent, context-aware responses to user queries and commands, improving the functionality and user experience of the AI productivity dashboard.
+This graph-based approach, enhanced by GraphRAG and Nostr communication, forms the core of OpenAgents' ability to provide intelligent, context-aware responses to user queries and commands, improving the functionality and user experience of the AI productivity dashboard.
