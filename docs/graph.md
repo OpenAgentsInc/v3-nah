@@ -11,6 +11,18 @@ The knowledge base uses graph theory concepts:
 
 Each node has a vector embedding, enabling cosine similarity search and specific information retrieval. This approach, inspired by Microsoft's GraphRAG paper, combines graph-based representation with vector-based similarity search.
 
+## Graph Visualization and Interaction
+
+The graph is implemented in a fullscreen @react-three/fiber canvas, overlaid by a HUD with buttons for push-to-talk, menu options, and other controls. Key features include:
+
+- Panning and zooming: Users can navigate the graph using a combination of OrbitControls (from @react-three/drei) and isomorphic camera or similar techniques.
+- Interactive nodes: Individual nodes can be clicked to view more detailed information.
+- Responsive design: The graph adapts to different screen sizes and orientations.
+
+## Data Storage and Synchronization
+
+Nodes and edges are stored in SQLite on the relay and transported to the client based on information requests. The app maintains a local copy using expo-sqlite, ensuring offline access and improved performance.
+
 ## GraphRAG Implementation
 
 OpenAgents implements GraphRAG (Graph-based Retrieval Augmented Generation) to improve understanding of complex relationships within codebases and user data. Key aspects include:
@@ -53,5 +65,7 @@ Benefits of this approach include:
 4. Flexible querying across the knowledge base
 5. Decentralized, resilient backend architecture
 6. Real-time updates and progressive responses
+7. Intuitive visual representation of complex data
+8. Seamless offline and online functionality
 
-This graph-based approach, enhanced by GraphRAG and Nostr communication, forms the core of OpenAgents' ability to provide intelligent, context-aware responses to user queries and commands.
+This graph-based approach, enhanced by GraphRAG and Nostr communication, forms the core of OpenAgents' ability to provide intelligent, context-aware responses to user queries and commands, while offering an engaging and interactive user experience.
