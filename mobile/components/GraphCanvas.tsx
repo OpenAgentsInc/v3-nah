@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas, useThree } from '@react-three/fiber/native';
+import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { OrbitControls } from '@react-three/drei/native';
 import * as THREE from 'three';
 
@@ -20,16 +20,24 @@ interface GraphCanvasProps {
 }
 
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
+  const ref = useRef<THREE.Mesh>(null);
+
+  useFrame(({ camera }) => {
+    if (ref.current) {
+      ref.current.quaternion.copy(camera.quaternion);
+    }
+  });
+
   return (
     <group position={position}>
-      <mesh>
-        <sphereGeometry args={[0.1, 32, 32]} />
+      <mesh ref={ref}>
+        <circleGeometry args={[0.1, 32]} />
         <meshBasicMaterial color="black" />
       </mesh>
-      <lineSegments>
-        <sphereGeometry args={[0.1, 32, 32]} />
-        <lineBasicMaterial color="white" />
-      </lineSegments>
+      <mesh ref={ref}>
+        <ringGeometry args={[0.09, 0.1, 32]} />
+        <meshBasicMaterial color="white" />
+      </mesh>
     </group>
   );
 };
