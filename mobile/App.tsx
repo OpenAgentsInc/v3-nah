@@ -16,6 +16,7 @@ import { useAudioRecording } from "./lib/useAudioRecording"
 import { useMessageHandler } from "./lib/useMessageHandler"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
+import { sampleGraph } from "./lib/graph"
 
 interface Message {
   type: 'transcription' | 'agentResponse';
@@ -73,21 +74,9 @@ export default function App() {
     }
   }, [socket, stopRecording, addMessage])
 
-  // Sample data for the graph
-  const nodes = [
-    { id: '1', position: [0, 0, 0] },
-    { id: '2', position: [1, 1, 1] },
-    { id: '3', position: [-1, -1, -1] },
-  ]
-  const edges = [
-    { source: '1', target: '2' },
-    { source: '2', target: '3' },
-    { source: '3', target: '1' },
-  ]
-
   return (
     <View style={styles.container}>
-      <GraphCanvas nodes={nodes} edges={edges} />
+      <GraphCanvas nodes={sampleGraph.nodes} edges={sampleGraph.edges} />
       <SafeAreaView style={styles.content}>
         <Header isConnected={isConnected} />
         <View style={styles.transcriptionContainer}>
