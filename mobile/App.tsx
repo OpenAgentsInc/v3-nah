@@ -9,6 +9,7 @@ import {
 import Header from "./components/Header"
 import PushToTalkButton from "./components/PushToTalkButton"
 import TranscriptionDisplay from "./components/TranscriptionDisplay"
+import GraphCanvas from "./components/GraphCanvas"
 import { sendAudioToRelay } from "./lib/sendAudioToRelay"
 import { useAudioPermission } from "./lib/useAudioPermission"
 import { useAudioRecording } from "./lib/useAudioRecording"
@@ -73,11 +74,24 @@ export default function App() {
     }
   }, [socket, stopRecording, addMessage])
 
+  // Sample data for the graph
+  const nodes = [
+    { id: '1', position: [0, 0, 0] },
+    { id: '2', position: [1, 1, 1] },
+    { id: '3', position: [-1, -1, -1] },
+  ]
+  const edges = [
+    { source: '1', target: '2' },
+    { source: '2', target: '3' },
+    { source: '3', target: '1' },
+  ]
+
   return (
     <SafeAreaView style={appStyles.safeArea}>
       <View style={appStyles.container}>
         <Header isConnected={isConnected} />
         <View style={appStyles.content}>
+          <GraphCanvas nodes={nodes} edges={edges} />
           <TranscriptionDisplay messages={messages} />
         </View>
         <PushToTalkButton
