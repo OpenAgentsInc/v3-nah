@@ -1,7 +1,7 @@
 import "text-encoding-polyfill"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useState } from "react"
-import { SafeAreaView, View } from "react-native"
+import { SafeAreaView, View, StyleSheet } from "react-native"
 import { useStore } from "@/lib/store"
 import {
   JetBrainsMono_400Regular, useFonts
@@ -87,11 +87,11 @@ export default function App() {
   ]
 
   return (
-    <SafeAreaView style={appStyles.safeArea}>
-      <View style={appStyles.container}>
+    <View style={styles.container}>
+      <GraphCanvas nodes={nodes} edges={edges} />
+      <SafeAreaView style={styles.content}>
         <Header isConnected={isConnected} />
-        <View style={appStyles.content}>
-          <GraphCanvas nodes={nodes} edges={edges} />
+        <View style={styles.transcriptionContainer}>
           <TranscriptionDisplay messages={messages} />
         </View>
         <PushToTalkButton
@@ -102,7 +102,22 @@ export default function App() {
           isProcessing={isProcessing}
         />
         <StatusBar style="light" />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    zIndex: 1,
+  },
+  transcriptionContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 20,
+  },
+});
