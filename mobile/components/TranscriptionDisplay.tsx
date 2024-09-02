@@ -1,5 +1,5 @@
-import React from "react"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface Message {
   type: 'transcription' | 'agentResponse';
@@ -12,37 +12,25 @@ interface TranscriptionDisplayProps {
 
 const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({ messages }) => {
   return (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.transcriptionContainer}>
+    <View style={styles.container}>
       {messages.map((message, index) => (
-        <Text key={index} style={message.type === 'transcription' ? styles.transcription : styles.agentResponse}>
-          {message.content.trim()}
+        <Text key={index} style={styles.message}>
+          {message.type === 'transcription' ? 'You: ' : 'Agent: '}
+          {message.content}
         </Text>
       ))}
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    width: '100%',
+  container: {
+    padding: 10,
+    pointerEvents: 'box-none',
   },
-  transcriptionContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    alignItems: 'flex-start',
-  },
-  transcription: {
-    color: 'rgba(255, 255, 255, 0.75)', // White with 75% opacity
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  agentResponse: {
-    color: '#fff', // Solid white
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 16,
-    marginBottom: 20,
+  message: {
+    color: 'white',
+    marginBottom: 5,
   },
 });
 
