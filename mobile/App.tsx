@@ -16,7 +16,6 @@ import { useAudioRecording } from "./lib/useAudioRecording"
 import { useMessageHandler } from "./lib/useMessageHandler"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
-import { appStyles } from "./styles/appStyles"
 
 interface Message {
   type: 'transcription' | 'agentResponse';
@@ -110,14 +109,17 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'black',
   },
   content: {
     flex: 1,
     zIndex: 1,
+    backgroundColor: 'transparent',
   },
   transcriptionContainer: {
     flex: 1,
     justifyContent: 'flex-end',
     marginBottom: 20,
+    backgroundColor: 'transparent',
   },
 });
