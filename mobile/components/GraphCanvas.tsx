@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Canvas, useFrame } from '@react-three/fiber/native';
 import { OrbitControls } from '@react-three/drei/native';
@@ -20,6 +20,7 @@ interface GraphCanvasProps {
 }
 
 const NODE_RADIUS = 0.1;
+const LINE_WIDTH = 2;
 
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
   const ref = useRef<THREE.Mesh>(null);
@@ -52,13 +53,13 @@ const Edge: React.FC<{ start: [number, number, number]; end: [number, number, nu
   const adjustedStart = startVec.clone().add(direction.clone().multiplyScalar(NODE_RADIUS));
   const adjustedEnd = endVec.clone().sub(direction.clone().multiplyScalar(NODE_RADIUS));
 
-  const points = [adjustedStart, adjustedEnd];
-  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+  const points = useMemo(() => [adjustedStart, adjustedEnd], [adjustedStart, adjustedEnd]);
+  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
 
   return (
-    <line geometry={lineGeometry}>
-      <lineBasicMaterial attach="material" color="white" linewidth={1} />
-    </line>
+    <lineSegments geometry={geometry}>
+      <lineBasicMaterial attach="material" color="white" linewidth={LINE_WIDTH} depthWrite={false} />
+    </lineSegments>
   );
 };
 
