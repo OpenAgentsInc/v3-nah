@@ -1,21 +1,20 @@
 import "text-encoding-polyfill"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useState } from "react"
-import { SafeAreaView, View } from "react-native"
+import { SafeAreaView, View, StyleSheet } from "react-native"
 import { useStore } from "@/lib/store"
-import {
-  JetBrainsMono_400Regular, useFonts
-} from "@expo-google-fonts/jetbrains-mono"
+import { JetBrainsMono_400Regular, useFonts } from "@expo-google-fonts/jetbrains-mono"
 import Header from "./components/Header"
 import PushToTalkButton from "./components/PushToTalkButton"
 import TranscriptionDisplay from "./components/TranscriptionDisplay"
+import GraphCanvas from "./components/GraphCanvas"
 import { sendAudioToRelay } from "./lib/sendAudioToRelay"
 import { useAudioPermission } from "./lib/useAudioPermission"
 import { useAudioRecording } from "./lib/useAudioRecording"
 import { useMessageHandler } from "./lib/useMessageHandler"
 import { useNostrUser } from "./lib/useNostrUser"
 import { useRelayConnection } from "./lib/useRelayConnection"
-import { appStyles } from "./styles/appStyles"
+import { sampleGraph } from "./lib/graph"
 
 interface Message {
   type: 'transcription' | 'agentResponse';
@@ -24,9 +23,7 @@ interface Message {
 
 export default function App() {
   useNostrUser()
-  let [fontsLoaded] = useFonts({
-    JetBrainsMono_400Regular,
-  });
+  let [fontsLoaded] = useFonts({ JetBrainsMono_400Regular });
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [messages, setMessages] = useState<Message[]>([])
@@ -74,10 +71,11 @@ export default function App() {
   }, [socket, stopRecording, addMessage])
 
   return (
-    <SafeAreaView style={appStyles.safeArea}>
-      <View style={appStyles.container}>
+    <View style={styles.container}>
+      <GraphCanvas nodes={sampleGraph.nodes} edges={sampleGraph.edges} />
+      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
         <Header isConnected={isConnected} />
-        <View style={appStyles.content}>
+        <View style={styles.transcriptionContainer} pointerEvents="box-none">
           <TranscriptionDisplay messages={messages} />
         </View>
         <PushToTalkButton
@@ -87,8 +85,24 @@ export default function App() {
           isRecording={isRecording}
           isProcessing={isProcessing}
         />
-        <StatusBar style="light" />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+      <StatusBar style="light" />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
+  },
+  transcriptionContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    pointerEvents: 'box-none',
+  },
+});
