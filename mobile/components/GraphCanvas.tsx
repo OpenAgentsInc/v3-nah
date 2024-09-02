@@ -52,20 +52,13 @@ const Edge: React.FC<{ start: [number, number, number]; end: [number, number, nu
   const adjustedStart = startVec.clone().add(direction.clone().multiplyScalar(NODE_RADIUS));
   const adjustedEnd = endVec.clone().sub(direction.clone().multiplyScalar(NODE_RADIUS));
 
-  const edgeGeometry = useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array([
-      adjustedStart.x, adjustedStart.y, adjustedStart.z,
-      adjustedEnd.x, adjustedEnd.y, adjustedEnd.z
-    ]);
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    return geometry;
-  }, [adjustedStart, adjustedEnd]);
+  const points = useMemo(() => [adjustedStart, adjustedEnd], [adjustedStart, adjustedEnd]);
+  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
 
   return (
-    <lineSegments geometry={edgeGeometry}>
-      <lineBasicMaterial color="white" />
-    </lineSegments>
+    <line geometry={geometry}>
+      <lineBasicMaterial attach="material" color="white" />
+    </line>
   );
 };
 
