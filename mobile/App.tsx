@@ -98,10 +98,11 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
   },
   transcriptionContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 20,
+    pointerEvents: 'box-none',
   },
 });
