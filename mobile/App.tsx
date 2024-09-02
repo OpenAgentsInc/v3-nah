@@ -1,7 +1,7 @@
 import "text-encoding-polyfill"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useState } from "react"
-import { SafeAreaView, View, StyleSheet } from "react-native"
+import { SafeAreaView, View, StyleSheet, ScrollView } from "react-native"
 import { useStore } from "@/lib/store"
 import {
   JetBrainsMono_400Regular, useFonts
@@ -77,11 +77,15 @@ export default function App() {
   return (
     <View style={styles.container}>
       <GraphCanvas nodes={sampleGraph.nodes} edges={sampleGraph.edges} />
-      <SafeAreaView style={styles.content} pointerEvents="box-none">
+      <SafeAreaView style={styles.overlay}>
         <Header isConnected={isConnected} />
-        <View style={styles.transcriptionContainer} pointerEvents="box-none">
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollViewContent}
+          pointerEvents="box-none"
+        >
           <TranscriptionDisplay messages={messages} />
-        </View>
+        </ScrollView>
         <PushToTalkButton
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -89,8 +93,8 @@ export default function App() {
           isRecording={isRecording}
           isProcessing={isProcessing}
         />
-        <StatusBar style="light" />
       </SafeAreaView>
+      <StatusBar style="light" />
     </View>
   );
 }
@@ -100,15 +104,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
-  content: {
-    flex: 1,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     zIndex: 1,
-    backgroundColor: 'transparent',
   },
-  transcriptionContainer: {
+  scrollView: {
     flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
     justifyContent: 'flex-end',
-    marginBottom: 20,
-    backgroundColor: 'transparent',
+    padding: 20,
   },
 });
