@@ -77,9 +77,9 @@ export default function App() {
   return (
     <View style={styles.container}>
       <GraphCanvas nodes={sampleGraph.nodes} edges={sampleGraph.edges} />
-      <SafeAreaView style={styles.content}>
+      <SafeAreaView style={styles.content} pointerEvents="box-none">
         <Header isConnected={isConnected} />
-        <View style={styles.transcriptionContainer}>
+        <View style={styles.transcriptionContainer} pointerEvents="box-none">
           <TranscriptionDisplay messages={messages} />
         </View>
         <PushToTalkButton
