@@ -1,6 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas, useFrame } from '@react-three/fiber/native';
+import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { OrbitControls } from '@react-three/drei/native';
 import * as THREE from 'three';
 
@@ -112,15 +112,44 @@ const Graph: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
   );
 };
 
+const CameraController = () => {
+  const { camera, gl } = useThree();
+  useEffect(() => {
+    camera.near = 0.1;
+    camera.far = 1000;
+    camera.updateProjectionMatrix();
+  }, [camera]);
+
+  return (
+    <OrbitControls
+      args={[camera, gl.domElement]}
+      enablePan={true}
+      enableZoom={true}
+      enableRotate={true}
+      panSpeed={0.5}
+      zoomSpeed={0.5}
+      mouseButtons={{
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.PAN,
+        RIGHT: THREE.MOUSE.PAN
+      }}
+      touches={{
+        ONE: THREE.TOUCH.ROTATE,
+        TWO: THREE.TOUCH.PAN
+      }}
+    />
+  );
+};
+
 const GraphCanvas: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
   return (
     <View style={styles.canvasContainer}>
-      <Canvas>
+      <Canvas camera={{ position: [0, 0, 5], fov: 75, near: 0.1, far: 1000 }}>
         <color attach="background" args={["#000000"]} />
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <Graph nodes={nodes} edges={edges} />
-        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+        <CameraController />
       </Canvas>
     </View>
   );
