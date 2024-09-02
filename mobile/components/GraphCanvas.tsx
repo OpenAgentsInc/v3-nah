@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas, useFrame } from '@react-three/fiber/native';
-import { OrbitControls } from '@react-three/drei/native';
+import { Canvas, useFrame, extend } from '@react-three/fiber/native';
+import { OrbitControls, shaderMaterial } from '@react-three/drei/native';
 import * as THREE from 'three';
 
 interface Node {
@@ -20,6 +20,25 @@ interface GraphCanvasProps {
 }
 
 const NODE_RADIUS = 0.1;
+
+const LineShaderMaterial = shaderMaterial(
+  { color: new THREE.Color('white') },
+  // Vertex Shader
+  `
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  // Fragment Shader
+  `
+    uniform vec3 color;
+    void main() {
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+);
+
+extend({ LineShaderMaterial });
 
 const Node: React.FC<{ position: [number, number, number] }> = ({ position }) => {
   const ref = useRef<THREE.Mesh>(null);
@@ -57,7 +76,8 @@ const Edge: React.FC<{ start: [number, number, number]; end: [number, number, nu
 
   return (
     <line geometry={geometry}>
-      <lineBasicMaterial attach="material" color="white" />
+      {/* @ts-ignore */}
+      <lineShaderMaterial attach="material" color="white" />
     </line>
   );
 };
