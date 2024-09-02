@@ -1,11 +1,9 @@
 import "text-encoding-polyfill"
 import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useState } from "react"
-import { SafeAreaView, View, StyleSheet, ScrollView } from "react-native"
+import { SafeAreaView, View, StyleSheet } from "react-native"
 import { useStore } from "@/lib/store"
-import {
-  JetBrainsMono_400Regular, useFonts
-} from "@expo-google-fonts/jetbrains-mono"
+import { JetBrainsMono_400Regular, useFonts } from "@expo-google-fonts/jetbrains-mono"
 import Header from "./components/Header"
 import PushToTalkButton from "./components/PushToTalkButton"
 import TranscriptionDisplay from "./components/TranscriptionDisplay"
@@ -25,9 +23,7 @@ interface Message {
 
 export default function App() {
   useNostrUser()
-  let [fontsLoaded] = useFonts({
-    JetBrainsMono_400Regular,
-  });
+  let [fontsLoaded] = useFonts({ JetBrainsMono_400Regular });
   const { isConnected, socket } = useRelayConnection()
   const { startRecording, stopRecording, isRecording } = useAudioRecording()
   const [messages, setMessages] = useState<Message[]>([])
@@ -77,15 +73,11 @@ export default function App() {
   return (
     <View style={styles.container}>
       <GraphCanvas nodes={sampleGraph.nodes} edges={sampleGraph.edges} />
-      <SafeAreaView style={styles.overlay}>
+      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
         <Header isConnected={isConnected} />
-        <ScrollView 
-          style={styles.scrollView} 
-          contentContainerStyle={styles.scrollViewContent}
-          pointerEvents="box-none"
-        >
+        <View style={styles.transcriptionContainer} pointerEvents="box-none">
           <TranscriptionDisplay messages={messages} />
-        </ScrollView>
+        </View>
         <PushToTalkButton
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -106,13 +98,9 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
   },
-  scrollView: {
+  transcriptionContainer: {
     flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
     justifyContent: 'flex-end',
     padding: 20,
   },
