@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
+import { Canvas, useFrame } from '@react-three/fiber/native';
 import { OrbitControls } from '@react-three/drei/native';
 import * as THREE from 'three';
 
@@ -80,7 +80,7 @@ const Graph: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
 const GraphCanvas: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
   return (
     <View style={styles.canvasContainer}>
-      <Canvas style={styles.canvas}>
+      <Canvas>
         <color attach="background" args={["#000000"]} />
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
@@ -94,10 +94,6 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ nodes, edges }) => {
 const styles = StyleSheet.create({
   canvasContainer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: -1,
-  },
-  canvas: {
-    flex: 1,
   },
 });
 
